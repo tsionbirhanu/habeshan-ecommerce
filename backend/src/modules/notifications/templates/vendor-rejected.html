@@ -1,0 +1,82 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #c0392b;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">Vendor Application Review</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello <strong>{{firstName}}</strong>,</p>
+
+    <p>
+      Thank you for applying to become a vendor on Habeshan Mini Market. Unfortunately, we are
+      unable to approve your application at this time.
+    </p>
+
+    <div
+      style="
+        background-color: #fadbd8;
+        padding: 15px;
+        border-left: 4px solid #c0392b;
+        margin: 20px 0;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="margin-top: 0; color: #c0392b">📋 Application Status</h3>
+      <p><strong>Application Date:</strong> {{applicationDate}}</p>
+      <p><strong>Status:</strong> Not Approved</p>
+      <p><strong>Reason:</strong> {{rejectionReason}}</p>
+    </div>
+
+    <p><strong>What You Can Do:</strong></p>
+    <ul>
+      <li>Review the feedback provided above</li>
+      <li>Address the concerns mentioned</li>
+      <li>Consider reapplying in the future</li>
+      <li>Contact us if you'd like to discuss the decision</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="mailto:support@habeshan.de?subject=Vendor%20Application%20Review&body=I%20would%20like%20to%20discuss%20my%20vendor%20application..."
+        style="
+          display: inline-block;
+          background-color: #3498db;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >Contact Support</a
+      >
+    </p>
+
+    <p>
+      We appreciate your interest in joining our marketplace. If you have any questions or would
+      like more information, please don't hesitate to reach out to
+      <strong>support@habeshan.de</strong>
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.
+    </p>
+  </div>
+</div>

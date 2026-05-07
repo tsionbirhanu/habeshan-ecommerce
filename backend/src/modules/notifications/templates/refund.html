@@ -1,0 +1,79 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #3498db;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">Refund Processed</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello <strong>{{firstName}}</strong>,</p>
+
+    <p>Your refund has been processed and approved.</p>
+
+    <div
+      style="
+        background-color: #d6eaf8;
+        padding: 15px;
+        border-left: 4px solid #3498db;
+        margin: 20px 0;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="margin-top: 0; color: #3498db">💰 Refund Details</h3>
+      <p><strong>Order Number:</strong> {{orderId}}</p>
+      <p><strong>Refund Amount:</strong> €{{refundAmount}}</p>
+      <p><strong>Refund Reason:</strong> {{refundReason}}</p>
+      <p><strong>Processing Date:</strong> {{refundDate}}</p>
+    </div>
+
+    <p><strong>Timeline:</strong></p>
+    <ul>
+      <li>Refund has been processed and approved</li>
+      <li>Amount will be credited to your {{paymentMethod}} account</li>
+      <li>Typical processing time: 3-5 business days</li>
+      <li>You'll see the credit in your account within this timeframe</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="{{appUrl}}/orders/{{orderId}}"
+        style="
+          display: inline-block;
+          background-color: #3498db;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >View Order Details</a
+      >
+    </p>
+
+    <p>
+      If you have questions about your refund or need further assistance, please contact us at
+      <strong>support@habeshan.de</strong>
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.
+    </p>
+  </div>
+</div>

@@ -1,0 +1,222 @@
+import { Router } from 'express';
+import * as authController from './auth.controller';
+import { authenticateToken } from '../../middleware/auth.middleware';
+import { validateBody } from '../../middleware/validation.middleware';
+import {
+  registerVendorSchema,
+  registerCustomerSchema,
+  loginSchema,
+  refreshTokenSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  resendVerificationSchema,
+} from './auth.validation';
+
+const router = Router();
+
+/**
+ * @swagger
+ * /api/auth/register-vendor:
+ *   post:
+ *     summary: Register as vendor
+ *     tags: [Auth]
+ *     description: Create a new vendor account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               businessName:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Vendor registered successfully
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Email already exists
+ */
+
+// Public routes
+router.post('/register-vendor', validateBody(registerVendorSchema), authController.registerVendor);
+
+/**
+ * @swagger
+ * /api/auth/register-customer:
+ *   post:
+ *     summary: Register as customer
+ *     tags: [Auth]
+ *     description: Create a new customer account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Customer registered successfully
+ *       400:
+ *         description: Validation error
+ */
+
+router.post(
+  '/register-customer',
+  validateBody(registerCustomerSchema),
+  authController.registerCustomer
+);
+
+router.get('/verify-email', authController.verifyEmail);
+
+router.post('/resend-verification', validateBody(resendVerificationSchema), authController.resendVerification);
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     description: Authenticate user and receive JWT token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ */
+router.post('/login', validateBody(loginSchema), authController.login);
+
+/**
+ * @swagger
+ * /api/auth/refresh-token:
+ *   post:
+ *     summary: Refresh JWT token
+ *     tags: [Auth]
+ *     description: Get a new access token using refresh token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ */
+router.post('/refresh-token', validateBody(refreshTokenSchema), authController.refreshToken);
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Forgot password
+ *     tags: [Auth]
+ *     description: Request password reset link
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Reset link sent to email
+ */
+router.post('/forgot-password', validateBody(forgotPasswordSchema), authController.forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password
+ *     tags: [Auth]
+ *     description: Reset password using reset token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ */
+router.post('/reset-password', validateBody(resetPasswordSchema), authController.resetPassword);
+
+// Protected routes
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ */
+router.post('/logout', authenticateToken, authController.logout);
+
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user details
+ */
+router.get('/me', authenticateToken, authController.getCurrentUser);
+
+export default router;

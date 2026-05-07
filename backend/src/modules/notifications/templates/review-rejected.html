@@ -1,0 +1,87 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #e74c3c;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">Review Needs Adjustment</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello <strong>{{firstName}}</strong>,</p>
+
+    <p>
+      Thank you for reviewing <strong>{{productName}}</strong>. We've reviewed your submission and
+      need some adjustments before we can publish it.
+    </p>
+
+    <div
+      style="
+        background-color: #fadbd8;
+        padding: 15px;
+        border-left: 4px solid #e74c3c;
+        margin: 20px 0;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="margin-top: 0; color: #e74c3c">Reason for Adjustment:</h3>
+      <p style="margin: 10px 0"><strong>{{reason}}</strong></p>
+    </div>
+
+    <p><strong>What You Can Do:</strong></p>
+    <ul>
+      <li>Update your review to address the feedback</li>
+      <li>Review our <strong>Community Guidelines</strong> for helpful tips</li>
+      <li>Focus on specific, helpful feedback about the product</li>
+      <li>Resubmit when you're ready</li>
+    </ul>
+
+    <p><strong>Community Guidelines:</strong></p>
+    <ul>
+      <li>✓ Be honest and specific about your experience</li>
+      <li>✓ Focus on the product quality and functionality</li>
+      <li>✓ Share constructive feedback</li>
+      <li>✗ Avoid offensive language or personal attacks</li>
+      <li>✗ Don't include contact information or links</li>
+      <li>✗ Don't promote competing products</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="{{appUrl}}/account/reviews"
+        style="
+          display: inline-block;
+          background-color: #3498db;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >Update Your Review</a
+      >
+    </p>
+
+    <p>We appreciate your feedback and look forward to publishing your updated review!</p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.<br />
+      If you have questions about this decision, please contact <strong>support@habeshan.de</strong>
+    </p>
+  </div>
+</div>

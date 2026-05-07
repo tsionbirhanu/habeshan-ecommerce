@@ -1,0 +1,80 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #f39c12;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">Your Order is On the Way! 📦</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello <strong>{{firstName}}</strong>,</p>
+
+    <p>Great news! Your order has been shipped and is on its way to you.</p>
+
+    <div
+      style="
+        background-color: #fef5e7;
+        padding: 15px;
+        border-left: 4px solid #f39c12;
+        margin: 20px 0;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="margin-top: 0; color: #f39c12">📮 Shipment Details</h3>
+      <p><strong>Order Number:</strong> {{orderId}}</p>
+      <p><strong>Carrier:</strong> {{carrier}}</p>
+      <p>
+        <strong>Tracking Number:</strong>
+        <a href="{{trackingUrl}}" style="color: #f39c12; text-decoration: none"
+          ><strong>{{trackingNumber}}</strong></a
+        >
+      </p>
+      <p><strong>Estimated Delivery:</strong> {{estimatedDelivery}}</p>
+    </div>
+
+    <p><strong>What to Expect:</strong></p>
+    <ul>
+      <li>Track your package in real-time using the tracking number</li>
+      <li>Signature may be required upon delivery</li>
+      <li>Typical delivery time: 2-5 business days</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="{{trackingUrl}}"
+        style="
+          display: inline-block;
+          background-color: #f39c12;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >Track Package</a
+      >
+    </p>
+
+    <p>Have questions? Contact us at <strong>support@habeshan.de</strong></p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.
+    </p>
+  </div>
+</div>

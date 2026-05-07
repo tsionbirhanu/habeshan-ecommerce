@@ -1,0 +1,78 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #27ae60;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">✓ Your Review Published!</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello <strong>{{firstName}}</strong>,</p>
+
+    <p>
+      Great news! Your review of <strong>{{productName}}</strong> has been approved and is now live.
+    </p>
+
+    <div
+      style="
+        background-color: #d4edda;
+        padding: 15px;
+        border-left: 4px solid #27ae60;
+        margin: 20px 0;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="margin-top: 0; color: #27ae60">✓ Your Review is Now Published</h3>
+      <p>
+        Other customers can now see your review and find it helpful. Your honest feedback helps our
+        community make better purchasing decisions.
+      </p>
+    </div>
+
+    <p><strong>What's Next:</strong></p>
+    <ul>
+      <li>Your review appears on the product page</li>
+      <li>Customers can mark your review as helpful</li>
+      <li>You can earn recognition badges for helpful reviews</li>
+      <li>Continue leaving reviews to help others!</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="{{reviewUrl}}"
+        style="
+          display: inline-block;
+          background-color: #27ae60;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >View Your Review</a
+      >
+    </p>
+
+    <p>Thank you for helping other customers make informed decisions!</p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.
+    </p>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #e67e22;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">⚠️ Low Stock Alert</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello Admin,</p>
+
+    <p>One or more products in your inventory are running low on stock.</p>
+
+    <div
+      style="
+        background-color: #fff3cd;
+        padding: 15px;
+        border-left: 4px solid #e67e22;
+        margin: 20px 0;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="margin-top: 0; color: #e67e22">📉 Low Stock Items</h3>
+      {{lowStockItems}}
+    </div>
+
+    <p><strong>Recommended Actions:</strong></p>
+    <ul>
+      <li>Review the stock levels in your dashboard</li>
+      <li>Place a reorder for low-stock items</li>
+      <li>Consider reducing visibility of items below critical levels</li>
+      <li>Update product availability status if needed</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="{{appUrl}}/admin/inventory"
+        style="
+          display: inline-block;
+          background-color: #e67e22;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >Manage Inventory</a
+      >
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.<br />
+      <strong>Auto-generated Alert:</strong> This is an automated inventory management alert.
+    </p>
+  </div>
+</div>

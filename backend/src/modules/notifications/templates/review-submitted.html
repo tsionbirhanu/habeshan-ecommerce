@@ -1,0 +1,78 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #3498db;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">Thank You for Your Review!</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello <strong>{{firstName}}</strong>,</p>
+
+    <p>Thank you for taking the time to review <strong>{{productName}}</strong>!</p>
+
+    <div
+      style="
+        background-color: #d6eaf8;
+        padding: 15px;
+        border-left: 4px solid #3498db;
+        margin: 20px 0;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="margin-top: 0; color: #3498db">📝 Your Review is Being Moderated</h3>
+      <p>
+        Our team is reviewing your feedback to ensure it meets our community guidelines. We'll
+        notify you once your review is published or if we need any changes.
+      </p>
+      <p><strong>This typically takes 1-2 business days.</strong></p>
+    </div>
+
+    <p><strong>What happens next:</strong></p>
+    <ul>
+      <li>Our moderation team reviews your review for quality and authenticity</li>
+      <li>If approved, it will appear on the product page</li>
+      <li>
+        Other customers can find your review helpful and valuable feedback will be highlighted
+      </li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="{{appUrl}}/account/reviews"
+        style="
+          display: inline-block;
+          background-color: #3498db;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >View Your Reviews</a
+      >
+    </p>
+
+    <p>Thank you for being part of the Habeshan community!</p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.
+    </p>
+  </div>
+</div>

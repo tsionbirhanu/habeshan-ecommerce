@@ -1,0 +1,84 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #3498db;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">Order Confirmed!</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello <strong>{{firstName}}</strong>,</p>
+
+    <p>Thank you for your order! We're getting it ready to ship.</p>
+
+    <div style="background-color: #ecf0f1; padding: 15px; margin: 20px 0; border-radius: 5px">
+      <h3 style="margin-top: 0">Order Details</h3>
+      <p><strong>Order Number:</strong> {{orderId}}</p>
+      <p><strong>Order Date:</strong> {{orderDate}}</p>
+      <p><strong>Total Amount:</strong> €{{totalAmount}}</p>
+    </div>
+
+    <h3>Order Items:</h3>
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0">
+      <thead>
+        <tr style="background-color: #ecf0f1">
+          <th style="padding: 10px; text-align: left; border: 1px solid #bdc3c7">Item</th>
+          <th style="padding: 10px; text-align: center; border: 1px solid #bdc3c7">Qty</th>
+          <th style="padding: 10px; text-align: right; border: 1px solid #bdc3c7">Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{itemsTable}}
+      </tbody>
+    </table>
+
+    <div style="background-color: #f0f8ff; padding: 15px; margin: 20px 0; border-radius: 5px">
+      <h3 style="margin-top: 0">📦 What's Next?</h3>
+      <ol>
+        <li>We'll prepare your items for shipment</li>
+        <li>You'll receive a shipping notification with tracking info</li>
+        <li>Your order will be delivered within 3-5 business days</li>
+      </ol>
+    </div>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="{{appUrl}}/orders/{{orderId}}"
+        style="
+          display: inline-block;
+          background-color: #3498db;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >Track Order</a
+      >
+    </p>
+
+    <p>
+      Have questions? Check your order details or contact us at <strong>support@habeshan.de</strong>
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.
+    </p>
+  </div>
+</div>

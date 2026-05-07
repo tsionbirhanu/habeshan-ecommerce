@@ -1,0 +1,75 @@
+<div
+  style="
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+  "
+>
+  <div
+    style="
+      background-color: #27ae60;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    "
+  >
+    <h1 style="margin: 0">Delivery Confirmed! ✓</h1>
+  </div>
+
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px">
+    <p>Hello <strong>{{firstName}}</strong>,</p>
+
+    <p>Your order has been successfully delivered! We hope you enjoy your items.</p>
+
+    <div
+      style="
+        background-color: #d4edda;
+        padding: 15px;
+        border-left: 4px solid #27ae60;
+        margin: 20px 0;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="margin-top: 0; color: #27ae60">📦 Delivery Confirmed</h3>
+      <p><strong>Order Number:</strong> {{orderId}}</p>
+      <p><strong>Delivered Date:</strong> {{deliveryDate}}</p>
+      <p><strong>Delivery Address:</strong> {{deliveryAddress}}</p>
+    </div>
+
+    <h3>Please Help Us Improve</h3>
+    <p>We'd love to hear about your experience! Please rate your order and leave feedback.</p>
+
+    <p style="text-align: center; margin-top: 30px">
+      <a
+        href="{{appUrl}}/orders/{{orderId}}/review"
+        style="
+          display: inline-block;
+          background-color: #27ae60;
+          color: white;
+          padding: 12px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+        >Leave Review</a
+      >
+    </p>
+
+    <p>
+      <strong>Important:</strong> If there are any issues with your order (damaged items, missing
+      items, etc.), please contact us immediately at <strong>support@habeshan.de</strong>
+    </p>
+
+    <p>Thank you for shopping with Habeshan Mini Market!</p>
+
+    <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0" />
+
+    <p style="color: #7f8c8d; font-size: 12px; text-align: center">
+      © {{currentYear}} Habeshan Mini Market. All rights reserved.
+    </p>
+  </div>
+</div>
