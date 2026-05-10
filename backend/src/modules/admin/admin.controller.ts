@@ -149,35 +149,16 @@ export const getAllVendors = async (req: AdminRequest, res: Response, next: Next
   }
 };
 
-export const approveVendor = async (req: AdminRequest, res: Response, next: NextFunction) => {
+export const createVendor = async (req: AdminRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user) throw new Error('User not authenticated');
 
-    const { vendorId } = req.params;
-    const vendor = await adminService.approveVendor(vendorId, req.user.userId, req.ip);
+    const result = await adminService.createVendor(req.body, req.user.userId, req.ip);
 
-    res.json({
+    res.status(201).json({
       success: true,
-      data: { vendor },
-      message: 'Vendor approved successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const rejectVendor = async (req: AdminRequest, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) throw new Error('User not authenticated');
-
-    const { vendorId } = req.params;
-    const { reason } = req.body;
-
-    const result = await adminService.rejectVendor(vendorId, req.user.userId, reason, req.ip);
-
-    res.json({
-      success: true,
-      message: result.message,
+      data: result,
+      message: 'Vendor account created. Verification email sent to vendor.',
     });
   } catch (error) {
     next(error);

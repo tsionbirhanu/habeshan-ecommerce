@@ -1,19 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import * as authService from './auth.service';
 
+// NOTE: Vendor registration is disabled. Vendors must be created by admin only.
+// Keeping this function for internal/admin use if needed
 export const registerVendor = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await authService.createVendor(req.body);
 
     res.status(201).json({
       success: true,
-      message: 'Registration submitted. Awaiting admin approval.',
+      message: 'Vendor registration submitted. Awaiting admin approval.',
     });
   } catch (error) {
     next(error);
   }
 };
 
+// Only endpoint for customer registration - no admin approval required
 export const registerCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await authService.createCustomer(req.body);
@@ -29,7 +32,7 @@ export const registerCustomer = async (req: Request, res: Response, next: NextFu
           role: user.role,
         },
       },
-      message: 'Account created successfully.',
+      message: 'Account created successfully. Please verify your email to start shopping.',
     });
   } catch (error) {
     next(error);
@@ -145,6 +148,20 @@ export const resendVerification = async (req: Request, res: Response, next: Next
     res.json({
       success: true,
       message: 'Verification email sent',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const setVendorPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, password } = req.body;
+    await authService.setVendorPassword(token, password);
+
+    res.json({
+      success: true,
+      message: 'Password set successfully. Your account is now active. You can now login.',
     });
   } catch (error) {
     next(error);

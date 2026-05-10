@@ -52,3 +52,14 @@ export const resetPasswordSchema = z
     message: 'Passwords do not match',
     path: ['confirmPassword'],
   });
+
+export const setVendorPasswordSchema = z
+  .object({
+    token: z.string().min(1, 'Invitation token is required'),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, 'Confirm password is required'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });

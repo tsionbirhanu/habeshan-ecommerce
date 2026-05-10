@@ -9,8 +9,11 @@ export const toggleUserStatusSchema = z.object({
   reason: z.string().optional(),
 });
 
-export const rejectVendorSchema = z.object({
-  reason: z.string().min(1, 'Reason is required'),
+export const createVendorSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').trim(),
+  lastName: z.string().min(1, 'Last name is required').trim(),
+  email: z.string().email('Invalid email address').toLowerCase().trim(),
+  phone: z.string().min(1, 'Phone is required').trim(),
 });
 
 export const paginationSchema = z.object({
@@ -41,7 +44,7 @@ export const activityLogSchema = z.object({
 
 export type UpdateUserRoleDTO = z.infer<typeof updateUserRoleSchema>;
 export type ToggleUserStatusDTO = z.infer<typeof toggleUserStatusSchema>;
-export type RejectVendorDTO = z.infer<typeof rejectVendorSchema>;
+export type CreateVendorDTO = z.infer<typeof createVendorSchema>;
 export type UsersFilterDTO = z.infer<typeof usersFilterSchema>;
 export type VendorsFilterDTO = z.infer<typeof vendorsFilterSchema>;
 export type ActivityLogDTO = z.infer<typeof activityLogSchema>;

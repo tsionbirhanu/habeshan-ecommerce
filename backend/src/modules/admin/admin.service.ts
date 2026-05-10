@@ -1,8 +1,10 @@
 import prisma from '../../database/prisma';
-import { UserNotFoundError, ForbiddenError, NotFoundError } from '../../utils/errors';
-import { generateResetToken } from '../../utils/jwt.utils';
+import { UserNotFoundError, ForbiddenError, UserAlreadyExistsError } from '../../utils/errors';
+import { generateResetToken, generateEmailVerificationToken } from '../../utils/jwt.utils';
 import logger from '../../utils/logger';
 import { UserRole } from '@prisma/client';
+import { hashPassword } from '../../utils/hash.utils';
+import { sendEmailAsync } from '../../utils/email.service';
 
 // Audit Log Helper
 const createAuditLog = async (
@@ -339,88 +341,86 @@ export const getAllVendors = async (
   };
 };
 
-export const approveVendor = async (vendorId: string, adminId: string, ipAddress?: string) => {
-  const vendor = await prisma.vendor.findUnique({
-    where: { id: vendorId },
-    include: { user: true },
-  });
-
-  if (!vendor) {
-    throw new NotFoundError('Vendor not found');
-  }
-
-  // Update vendor and user in transaction
-  const updated = await prisma.$transaction(async (tx) => {
-    // Update vendor
-    const updatedVendor = await tx.vendor.update({
-      where: { id: vendorId },
-      data: {
-        isApproved: true,
-        approvedAt: new Date(),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    });
-
-    // Activate user
-    await tx.user.update({
-      where: { id: vendor.userId },
-      data: { isActive: true },
-    });
-
-    return updatedVendor;
-  });
-
-  // Log action
-  await createAuditLog(adminId, 'VENDOR_APPROVED', 'Vendor', vendorId, {}, ipAddress);
-
-  logger.info(`Admin ${adminId} approved vendor ${vendorId}`);
-
-  // TODO: Queue approval email to vendor
-  // await queueEmail('vendorApproved', vendor.user.email, { businessName: vendor.businessName });
-
-  return updated;
-};
-
-export const rejectVendor = async (
-  vendorId: string,
+export const createVendor = async (
+  data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  },
   adminId: string,
-  reason: string,
   ipAddress?: string
 ) => {
-  const vendor = await prisma.vendor.findUnique({
-    where: { id: vendorId },
-    include: { user: true },
-  });
-
-  if (!vendor) {
-    throw new NotFoundError('Vendor not found');
+  const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+  if (existingUser) {
+    throw new UserAlreadyExistsError('Email already registered');
   }
 
-  // Disable user
-  await prisma.user.update({
-    where: { id: vendor.userId },
-    data: { isActive: false },
+  // Generate temporary password (will be replaced when vendor sets their password)
+  const tempPassword = Math.random().toString(36).slice(-12) + 'Temp1!';
+  const hashedPassword = await hashPassword(tempPassword);
+
+  // Generate invitation token for vendor to set password
+  const invitationToken = generateEmailVerificationToken(data.email);
+  const tokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days for invitation
+
+  const user = await prisma.user.create({
+    data: {
+      email: data.email,
+      password: hashedPassword,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      role: 'VENDOR',
+      isActive: false, // Will auto-activate when vendor sets password
+      isEmailVerified: false,
+      emailVerificationToken: invitationToken,
+      emailTokenExpiresAt: tokenExpiresAt,
+    },
+  });
+
+  const vendor = await prisma.vendor.create({
+    data: {
+      userId: user.id,
+      isApproved: true, // Auto-approved when created by admin
+    },
   });
 
   // Log action
-  await createAuditLog(adminId, 'VENDOR_REJECTED', 'Vendor', vendorId, { reason }, ipAddress);
+  await createAuditLog(adminId, 'VENDOR_CREATED', 'Vendor', vendor.id, {}, ipAddress);
 
-  logger.info(`Admin ${adminId} rejected vendor ${vendorId}: ${reason}`);
+  logger.info(`Admin ${adminId} created vendor account: ${user.email}`);
 
-  // TODO: Queue rejection email to vendor
-  // await queueEmail('vendorRejected', vendor.user.email, { reason });
+  // Send invitation email to vendor
+  const setPasswordUrl = `${process.env.APP_URL || 'http://localhost:3001'}/vendor/setup-password?token=${invitationToken}`;
+  // TODO: Create a proper invitation email template
+  const invitationEmail = {
+    to: data.email,
+    subject: 'Vendor Account Invitation',
+    html: `
+      <h1>Welcome to Habesha Mini Market!</h1>
+      <p>Hi ${data.firstName},</p>
+      <p>Your vendor account has been created. Please click the link below to set your password and activate your account:</p>
+      <p><a href="${setPasswordUrl}">Set Password</a></p>
+      <p>This link expires in 7 days.</p>
+    `,
+  };
+  sendEmailAsync(invitationEmail).catch((err) => {
+    logger.error(`Failed to send invitation email to ${user.email}:`, err);
+  });
 
   return {
-    message: 'Vendor rejected',
-    vendorId,
+    user: {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      role: user.role,
+    },
+    vendor: {
+      id: vendor.id,
+      isApproved: vendor.isApproved,
+    },
   };
 };

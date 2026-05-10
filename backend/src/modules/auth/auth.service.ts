@@ -68,7 +68,11 @@ export const createVendor = async (data: {
 
   // Send verification email
   const verificationUrl = `${process.env.APP_URL || 'http://localhost:3001/api'}/auth/verify-email?token=${verificationToken}`;
-  const verificationEmail = generateEmailVerificationEmail(user.firstName, user.email, verificationUrl);
+  const verificationEmail = generateEmailVerificationEmail(
+    user.firstName,
+    user.email,
+    verificationUrl
+  );
   sendEmailAsync(verificationEmail).catch((err) => {
     logger.error(`Failed to send verification email to ${user.email}:`, err);
   });
@@ -92,6 +96,7 @@ export const createCustomer = async (data: {
   const verificationToken = generateEmailVerificationToken(data.email);
   const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+  // NOTE: Customers register directly - no admin approval needed
   const user = await prisma.user.create({
     data: {
       email: data.email,
@@ -100,7 +105,7 @@ export const createCustomer = async (data: {
       lastName: data.lastName,
       phone: data.phone,
       role: 'CUSTOMER',
-      isActive: false, // Inactive until email verified
+      isActive: false, // Inactive until email is verified
       isEmailVerified: false,
       emailVerificationToken: verificationToken,
       emailTokenExpiresAt: tokenExpiresAt,
@@ -113,11 +118,15 @@ export const createCustomer = async (data: {
     },
   });
 
-  logger.info(`Customer registered (pending verification): ${user.email}`);
+  logger.info(`Customer registered (pending email verification): ${user.email}`);
 
   // Send verification email
   const verificationUrl = `${process.env.APP_URL || 'http://localhost:3001/api'}/auth/verify-email?token=${verificationToken}`;
-  const verificationEmail = generateEmailVerificationEmail(user.firstName, user.email, verificationUrl);
+  const verificationEmail = generateEmailVerificationEmail(
+    user.firstName,
+    user.email,
+    verificationUrl
+  );
   sendEmailAsync(verificationEmail).catch((err) => {
     logger.error(`Failed to send verification email to ${user.email}:`, err);
   });
@@ -225,6 +234,51 @@ export const resetUserPassword = async (token: string, newPassword: string) => {
   return true;
 };
 
+// ============ VENDOR PASSWORD SETUP ============
+export const setVendorPassword = async (token: string, password: string) => {
+  const { email } = verifyEmailVerificationToken(token);
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+      emailVerificationToken: token,
+      emailTokenExpiresAt: { gte: new Date() },
+    },
+  });
+
+  if (!user) {
+    throw new InvalidCredentialsError('Invalid or expired invitation token');
+  }
+
+  if (user.role !== 'VENDOR') {
+    throw new ForbiddenError('This endpoint is only for vendors');
+  }
+
+  const hashedPassword = await hashPassword(password);
+
+  // Update password, mark email as verified, and activate account
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+      isEmailVerified: true,
+      isActive: true, // Auto-activate vendor
+      emailVerificationToken: null,
+      emailTokenExpiresAt: null,
+    },
+  });
+
+  logger.info(`Vendor ${user.email} set password and activated account`);
+
+  // Send welcome email
+  const welcomeEmail = generateWelcomeEmail(user.firstName, user.email);
+  sendEmailAsync(welcomeEmail).catch((err) => {
+    logger.error(`Failed to send welcome email to ${user.email}:`, err);
+  });
+
+  return true;
+};
+
 export const getUserById = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -251,12 +305,12 @@ export const getUserById = async (userId: string) => {
 export const verifyEmail = async (token: string) => {
   const { email } = verifyEmailVerificationToken(token);
 
-  const user = await prisma.user.findUnique({ 
-    where: { 
+  const user = await prisma.user.findUnique({
+    where: {
       email,
       emailVerificationToken: token,
-      emailTokenExpiresAt: { gte: new Date() }
-    } 
+      emailTokenExpiresAt: { gte: new Date() },
+    },
   });
 
   if (!user) {
@@ -310,7 +364,11 @@ export const resendVerificationEmail = async (email: string) => {
 
   // Send new verification email
   const verificationUrl = `${process.env.APP_URL || 'http://localhost:3001/api'}/auth/verify-email?token=${verificationToken}`;
-  const verificationEmail = generateEmailVerificationEmail(user.firstName, user.email, verificationUrl);
+  const verificationEmail = generateEmailVerificationEmail(
+    user.firstName,
+    user.email,
+    verificationUrl
+  );
   sendEmailAsync(verificationEmail).catch((err) => {
     logger.error(`Failed to send verification email to ${user.email}:`, err);
   });

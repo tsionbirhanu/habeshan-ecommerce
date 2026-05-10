@@ -21,39 +21,137 @@ const router = Router();
 router.use(authenticateToken);
 
 /**
- * GET /api/notifications
- * Get all notifications for the current user
- * Query params: page, limit, unreadOnly
+ * @swagger
+ * /api/notifications:
+ *   get:
+ *     summary: Get all notifications
+ *     tags: [Notifications]
+ *     description: Retrieve paginated notifications for the current user
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: unreadOnly
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: Notifications retrieved successfully
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/', getMyNotifications);
 
 /**
- * GET /api/notifications/stats
- * Get notification statistics (total, unread, read)
+ * @swagger
+ * /api/notifications/stats:
+ *   get:
+ *     summary: Get notification statistics
+ *     tags: [Notifications]
+ *     description: Get notification counts (total, unread, read)
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Notification statistics retrieved successfully
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/stats', getNotificationStats);
 
 /**
- * PUT /api/notifications/:notificationId/read
- * Mark a single notification as read
+ * @swagger
+ * /api/notifications/{notificationId}/read:
+ *   put:
+ *     summary: Mark notification as read
+ *     tags: [Notifications]
+ *     description: Mark a single notification as read
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: notificationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Notification marked as read
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Notification not found
  */
 router.put('/:notificationId/read', markNotificationAsRead);
 
 /**
- * PUT /api/notifications/read-all
- * Mark all notifications as read
+ * @swagger
+ * /api/notifications/read-all:
+ *   put:
+ *     summary: Mark all notifications as read
+ *     tags: [Notifications]
+ *     description: Mark all notifications as read for the current user
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications marked as read
+ *       401:
+ *         description: Unauthorized
  */
 router.put('/read-all', markAllNotificationsAsRead);
 
 /**
- * DELETE /api/notifications/:notificationId
- * Delete a single notification
+ * @swagger
+ * /api/notifications/{notificationId}:
+ *   delete:
+ *     summary: Delete notification
+ *     tags: [Notifications]
+ *     description: Delete a single notification
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: notificationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Notification deleted
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Notification not found
  */
 router.delete('/:notificationId', deleteNotification);
 
 /**
- * DELETE /api/notifications/delete-all
- * Delete all notifications for the current user
+ * @swagger
+ * /api/notifications/delete-all:
+ *   delete:
+ *     summary: Delete all notifications
+ *     tags: [Notifications]
+ *     description: Delete all notifications for the current user
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications deleted
+ *       401:
+ *         description: Unauthorized
  */
 router.delete('/delete-all', deleteAllNotifications);
 

@@ -3,13 +3,13 @@ import * as authController from './auth.controller';
 import { authenticateToken } from '../../middleware/auth.middleware';
 import { validateBody } from '../../middleware/validation.middleware';
 import {
-  registerVendorSchema,
   registerCustomerSchema,
   loginSchema,
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   resendVerificationSchema,
+  setVendorPasswordSchema,
 } from './auth.validation';
 
 const router = Router();
@@ -18,39 +18,17 @@ const router = Router();
  * @swagger
  * /api/auth/register-vendor:
  *   post:
- *     summary: Register as vendor
+ *     summary: Register as vendor (DISABLED - Use admin endpoint to create vendors)
  *     tags: [Auth]
- *     description: Create a new vendor account
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *                 minLength: 8
- *               firstName:
- *                 type: string
- *               lastName:
- *                 type: string
- *               businessName:
- *                 type: string
+ *     description: DEPRECATED - Vendors must be created by admin only
  *     responses:
- *       201:
- *         description: Vendor registered successfully
- *       400:
- *         description: Validation error
- *       409:
- *         description: Email already exists
+ *       403:
+ *         description: Vendor registration disabled
  */
 
-// Public routes
-router.post('/register-vendor', validateBody(registerVendorSchema), authController.registerVendor);
+// DISABLED: Vendor registration via public endpoint
+// Vendors must be created by admin using /admin/vendors/create endpoint
+// router.post('/register-vendor', validateBody(registerVendorSchema), authController.registerVendor);
 
 /**
  * @swagger
@@ -58,7 +36,7 @@ router.post('/register-vendor', validateBody(registerVendorSchema), authControll
  *   post:
  *     summary: Register as customer
  *     tags: [Auth]
- *     description: Create a new customer account
+ *     description: Create a new customer account. Email verification required.
  *     requestBody:
  *       required: true
  *       content:
@@ -76,22 +54,76 @@ router.post('/register-vendor', validateBody(registerVendorSchema), authControll
  *                 type: string
  *               lastName:
  *                 type: string
+ *               phone:
+ *                 type: string
  *     responses:
  *       201:
- *         description: Customer registered successfully
+ *         description: Customer registered successfully. Email verification required.
  *       400:
  *         description: Validation error
+ *       409:
+ *         description: Email already exists
  */
 
+// Public routes - only customer registration allowed
 router.post(
   '/register-customer',
   validateBody(registerCustomerSchema),
   authController.registerCustomer
 );
 
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   get:
+ *     summary: Verify email address
+ *     tags: [Auth]
+ *     description: Verify customer email using verification token sent in registration email
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email verification token
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
 router.get('/verify-email', authController.verifyEmail);
 
-router.post('/resend-verification', validateBody(resendVerificationSchema), authController.resendVerification);
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Resend verification email
+ *     tags: [Auth]
+ *     description: Resend verification email for unverified accounts
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Verification email sent
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User not found
+ */
+router.post(
+  '/resend-verification',
+  validateBody(resendVerificationSchema),
+  authController.resendVerification
+);
 
 /**
  * @swagger
@@ -188,6 +220,36 @@ router.post('/forgot-password', validateBody(forgotPasswordSchema), authControll
  *         description: Password reset successfully
  */
 router.post('/reset-password', validateBody(resetPasswordSchema), authController.resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/vendor/setup-password:
+ *   post:
+ *     summary: Vendor setup password
+ *     tags: [Auth]
+ *     description: Vendor sets password using invitation token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               confirmPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password set successfully
+ */
+router.post(
+  '/vendor/setup-password',
+  validateBody(setVendorPasswordSchema),
+  authController.setVendorPassword
+);
 
 // Protected routes
 

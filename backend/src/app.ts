@@ -79,10 +79,13 @@ import reviewRoutes from './modules/reviews/review.routes';
 import wishlistRoutes from './modules/wishlist/wishlist.routes';
 import shippingRoutes from './modules/shipping/shipping.routes';
 import couponRoutes from './modules/coupons/coupon.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
+import publicRoutes from './modules/public/public.routes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api', productRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/cart', cartRoutes);
@@ -93,6 +96,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api', publicRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
