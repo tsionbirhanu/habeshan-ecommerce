@@ -1,9 +1,10 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { emailQueue } from '../../config/queue';
+import emailQueue, { isRedisAvailable } from '../../config/queue';
 import logger from '../../utils/logger';
 import { AppError } from '../../utils/errors';
 import { EmailJobData } from '../../jobs/email.job';
+import { sendEmail } from '../../utils/email.service';
 
 /**
  * Email Service
@@ -62,6 +63,7 @@ function replaceVariables(template: string, data: TemplateData): string {
 /**
  * Queue email job
  * Common function used by all email sending functions
+ * Falls back to direct Nodemailer sending if Redis/Bull is unavailable
  */
 async function queueEmail(
   to: string,
@@ -71,31 +73,49 @@ async function queueEmail(
   data?: TemplateData,
   attachments?: EmailJobData['attachments']
 ): Promise<string> {
+  // If Redis/Bull is available, use the queue
+  if (emailQueue && isRedisAvailable) {
+    try {
+      const jobData: EmailJobData = {
+        to,
+        subject,
+        html,
+        templateId,
+        data,
+        attachments,
+      };
+
+      const job = await emailQueue.add(jobData, {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      });
+
+      logger.info(`Email queued: ${to} | Template: ${templateId} | Job ID: ${job.id}`);
+      return job.id.toString();
+    } catch (error: any) {
+      logger.warn(`Failed to queue email via Bull, falling back to direct send: ${error.message}`);
+    }
+  }
+
+  // Fallback: Send email directly via Nodemailer if queue is unavailable
   try {
-    const jobData: EmailJobData = {
-      to,
-      subject,
-      html,
-      templateId,
-      data,
-      attachments,
-    };
-
-    const job = await emailQueue.add(jobData, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
-      },
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
-
-    logger.info(`Email queued: ${to} | Template: ${templateId} | Job ID: ${job.id}`);
-    return job.id.toString();
+    logger.info(`[DIRECT SEND] Sending email directly via Nodemailer: ${to} | Template: ${templateId}`);
+    const success = await sendEmail({ to, subject, html });
+    
+    if (success) {
+      logger.info(`✓ Email sent directly via Nodemailer: ${to}`);
+      return 'direct-send-' + Date.now();
+    } else {
+      throw new Error('Direct email send failed');
+    }
   } catch (error: any) {
-    logger.error(`Failed to queue email: ${error.message}`);
-    throw new AppError(`Failed to queue email to ${to}`, 500, 'QUEUE_ERROR');
+    logger.error(`Failed to send email directly: ${error.message}`);
+    throw new AppError(`Failed to send email to ${to}`, 500, 'EMAIL_SEND_ERROR');
   }
 }
 
