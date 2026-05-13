@@ -2,65 +2,58 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuthHooks } from "@/lib/api/hooks/useAuth";
+import { parseApiError } from "@/lib/api/errors/error-handler";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { AlertCircle, Mail } from "lucide-react";
 
-// Mock forgot password function
-const mockForgotPassword = async (email: string) => {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  // Always succeed for mock
-  return { success: true };
-};
-
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const { forgotPasswordMutation } = useAuthHooks();
   const { t } = useTranslation();
+
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setIsLoading(true);
 
     try {
-      await mockForgotPassword(email);
-      setIsSubmitted(true);
-      setEmail("");
-    } catch (err: any) {
-      setIsSubmitted(true);
-    } finally {
-      setIsLoading(false);
+      await forgotPasswordMutation.mutateAsync({ email });
+      setSubmitted(true);
+    } catch (err) {
+      const appError = parseApiError(err);
+      setError(appError.message);
     }
   };
 
-  if (isSubmitted) {
+  if (submitted) {
     return (
       <div className="w-full text-center">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-maroon-dark font-display mb-2">
-            {t("auth.linkSent")}
-          </h1>
-        </div>
-
-        {/* Success Message */}
-        <div className="flex justify-center mb-8">
-          <div className="relative">
-            <div className="absolute inset-0 bg-blue-100 rounded-full animate-pulse"></div>
-            <Mail className="w-20 h-20 text-blue-600 relative" />
+        {/* Envelope Animation */}
+        <div className="mb-8 flex justify-center">
+          <div className="relative w-24 h-24 animate-bounce">
+            <Mail className="w-full h-full text-maroon" />
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <p className="text-gray-700 mb-2">{t("auth.emailExists")}</p>
-          <p className="text-sm text-gray-600">{t("auth.checkSpam")}</p>
-        </div>
+        <h1 className="text-4xl font-bold text-maroon-dark font-display mb-2">
+          {t("auth.checkEmail")}
+        </h1>
+        <p className="text-gray-600 mb-6">{t("auth.passwordResetSent")}</p>
+        <p className="text-sm text-gray-600 mb-8">
+          {t("auth.email")}: <strong>{email}</strong>
+        </p>
+
+        <p className="text-sm text-gray-500 mb-8">
+          {t("auth.resetLinkExpires")}
+        </p>
 
         {/* Back to Login */}
         <Link
           href="/login"
-          className="inline-block px-8 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition">
+          className="inline-block px-6 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition">
           {t("auth.backToLogin")}
         </Link>
       </div>
@@ -69,11 +62,12 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="w-full">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-maroon-dark font-display mb-2">
-          {t("auth.forgotPasswordTitle")}
+          {t("auth.forgotPassword")}
         </h1>
-        <p className="text-gray-600">{t("auth.forgotPasswordSubtitle")}</p>
+        <p className="text-gray-600">{t("auth.enterEmailForReset")}</p>
       </div>
 
       {/* Error Alert */}
@@ -84,8 +78,8 @@ export default function ForgotPasswordPage() {
         </div>
       )}
 
+      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Email */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             {t("auth.email")}
@@ -94,31 +88,31 @@ export default function ForgotPasswordPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition"
             placeholder="your@email.com"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition"
             required
-            disabled={isLoading}
+            disabled={forgotPasswordMutation.isPending}
           />
         </div>
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={forgotPasswordMutation.isPending}
           className="w-full bg-maroon text-white py-3 rounded-lg font-semibold hover:bg-maroon-dark transition disabled:opacity-50 disabled:cursor-not-allowed mt-6">
-          {isLoading ? t("auth.sending") : t("auth.sendLink")}
+          {forgotPasswordMutation.isPending
+            ? t("auth.sending")
+            : t("auth.sendResetLink")}
         </button>
       </form>
 
       {/* Back to Login */}
       <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-        <p className="text-gray-600 text-sm">
-          <Link
-            href="/login"
-            className="text-maroon font-semibold hover:underline">
-            {t("auth.backToLogin")}
-          </Link>
-        </p>
+        <Link
+          href="/login"
+          className="text-maroon hover:underline font-semibold text-sm">
+          {t("auth.backToLogin")}
+        </Link>
       </div>
     </div>
   );

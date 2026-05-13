@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
+import { useAuthHooks } from "@/lib/api/hooks/useAuth";
+import { parseApiError } from "@/lib/api/errors/error-handler";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { AlertCircle, Eye, EyeOff, CheckCircle2 } from "lucide-react";
-import { Suspense } from "react";
 
 const passwordStrength = (password: string) => {
   let strength = 0;
@@ -16,7 +17,7 @@ const passwordStrength = (password: string) => {
   return strength;
 };
 
-const getStrengthLabel = (strength: number, t: (key: string) => string) => {
+const getStrengthLabel = (strength: number, t: Function) => {
   switch (strength) {
     case 0:
       return { label: t("auth.veryWeak"), color: "bg-red-500" };
@@ -33,34 +34,24 @@ const getStrengthLabel = (strength: number, t: (key: string) => string) => {
   }
 };
 
-// Mock reset password function
-const mockResetPassword = async () => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  // Always succeed for mock
-  return { success: true };
-};
-
-function ResetPasswordContent() {
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+export default function ResetPasswordPage() {
+  const router = useRouter();
+  const params = useParams();
+  const { resetPasswordMutation } = useAuthHooks();
   const { t } = useTranslation();
+
+  const token = params.token as string;
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (!token) {
-      setError(t("auth.invalidToken"));
-      return;
-    }
 
     if (!password || !confirmPassword) {
       setError(t("auth.fillAllFields"));
@@ -77,68 +68,45 @@ function ResetPasswordContent() {
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      await mockResetPassword();
-      setIsSuccess(true);
-    } catch {
-      setError(t("auth.signInFailed"));
-    } finally {
-      setIsLoading(false);
+      await resetPasswordMutation.mutateAsync({
+        token,
+        newPassword: password,
+      });
+      setSuccess(true);
+      setTimeout(() => router.push("/login"), 2000);
+    } catch (err) {
+      const appError = parseApiError(err);
+      setError(appError.message);
     }
   };
 
-  if (!token) {
+  if (success) {
     return (
       <div className="w-full text-center">
-        <h1 className="text-4xl font-bold text-maroon-dark font-display mb-6">
-          {t("auth.invalidToken")}
+        <h1 className="text-4xl font-bold text-maroon-dark font-display mb-2">
+          {t("auth.passwordReset")}
         </h1>
-        <p className="text-gray-600 mb-8">{t("auth.forgotPasswordTitle")}</p>
-        <Link
-          href="/forgot-password"
-          className="inline-block px-8 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition">
-          {t("auth.requestNewLink")}
-        </Link>
-      </div>
-    );
-  }
+        <p className="text-gray-600 mb-8">{t("auth.passwordResetSuccess")}</p>
 
-  if (isSuccess) {
-    return (
-      <div className="w-full text-center">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-maroon-dark font-display mb-2">
-            {t("auth.passwordReset")}
-          </h1>
+        <div className="inline-block px-6 py-3 bg-green-50 border border-green-200 rounded-lg">
+          <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto" />
+          <p className="text-green-700 font-semibold mt-2">
+            {t("auth.redirecting")}...
+          </p>
         </div>
-
-        <div className="flex justify-center mb-8">
-          <div className="relative">
-            <div className="absolute inset-0 bg-green-100 rounded-full animate-pulse"></div>
-            <CheckCircle2 className="w-20 h-20 text-green-600 relative" />
-          </div>
-        </div>
-
-        <p className="text-gray-600 mb-8">{t("auth.accountActivated")}</p>
-
-        <Link
-          href="/login"
-          className="inline-block px-8 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition">
-          {t("auth.backToLogin")}
-        </Link>
       </div>
     );
   }
 
   return (
     <div className="w-full">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-maroon-dark font-display mb-2">
-          {t("auth.resetPasswordTitle")}
+          {t("auth.resetPassword")}
         </h1>
-        <p className="text-gray-600">{t("auth.resetPasswordSubtitle")}</p>
+        <p className="text-gray-600">{t("auth.enterNewPassword")}</p>
       </div>
 
       {/* Error Alert */}
@@ -149,21 +117,21 @@ function ResetPasswordContent() {
         </div>
       )}
 
+      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Password */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            {t("auth.password")}
+            {t("auth.newPassword")}
           </label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition"
               placeholder="••••••••"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition"
               required
-              disabled={isLoading}
             />
             <button
               type="button"
@@ -206,10 +174,9 @@ function ResetPasswordContent() {
               type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition"
               placeholder="••••••••"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition"
               required
-              disabled={isLoading}
             />
             <button
               type="button"
@@ -229,31 +196,22 @@ function ResetPasswordContent() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={resetPasswordMutation.isPending}
           className="w-full bg-maroon text-white py-3 rounded-lg font-semibold hover:bg-maroon-dark transition disabled:opacity-50 disabled:cursor-not-allowed mt-6">
-          {isLoading ? t("auth.resettingPassword") : t("auth.resetPassword")}
+          {resetPasswordMutation.isPending
+            ? t("auth.resetting")
+            : t("auth.resetPassword")}
         </button>
       </form>
 
       {/* Back to Login */}
       <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-        <p className="text-gray-600 text-sm">
-          <Link
-            href="/login"
-            className="text-maroon font-semibold hover:underline">
-            {t("auth.backToLogin")}
-          </Link>
-        </p>
+        <Link
+          href="/login"
+          className="text-maroon hover:underline font-semibold text-sm">
+          {t("auth.backToLogin")}
+        </Link>
       </div>
     </div>
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense
-      fallback={<div className="w-full text-center py-12">Loading...</div>}>
-      <ResetPasswordContent />
-    </Suspense>
   );
 }

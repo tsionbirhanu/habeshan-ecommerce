@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuthHooks } from "@/lib/api/hooks/useAuth";
+import { parseApiError } from "@/lib/api/errors/error-handler";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { AlertCircle, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 
@@ -31,61 +34,42 @@ const getStrengthLabel = (strength: number, t: Function) => {
   }
 };
 
-// Mock registration function
-const mockRegister = async (data: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  // Always succeed for mock
-  return { email: data.email };
-};
-
 export default function RegisterPage() {
+  const router = useRouter();
+  const { registerMutation } = useAuthHooks();
   const { t } = useTranslation();
+
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Step 1
-  const [userType, setUserType] = useState<"customer" | "vendor" | null>(null);
-
-  // Step 2
+  // Step 1: Personal Info
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  // Step 3
+  // Step 2: Password
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Step 4
+  // Step 3: Terms
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [subscribeToNewsletter, setSubscribeToNewsletter] = useState(false);
 
-  // Step 5 - Email verification
+  // Step 4: Verification
   const [registrationEmail, setRegistrationEmail] = useState("");
 
   const handleNext = () => {
+    setError(null);
     if (step === 1) {
-      if (!userType) {
-        setError(t("auth.fillAllFields"));
-        return;
-      }
-      if (userType === "vendor") {
-        setError(null);
-        return;
-      }
-      setError(null);
-      setStep(2);
-    } else if (step === 2) {
       if (!firstName || !lastName || !email || !phone) {
         setError(t("auth.fillAllFields"));
         return;
       }
-      setError(null);
-      setStep(3);
-    } else if (step === 3) {
+      setStep(2);
+    } else if (step === 2) {
       if (!password || !confirmPassword) {
         setError(t("auth.fillAllFields"));
         return;
@@ -98,8 +82,7 @@ export default function RegisterPage() {
         setError(t("auth.passwordTooWeak"));
         return;
       }
-      setError(null);
-      setStep(4);
+      setStep(3);
     }
   };
 
@@ -112,45 +95,32 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!agreeToTerms) {
       setError(t("auth.agreeToTerms"));
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-
     try {
-      const response = await mockRegister({
+      await registerMutation.mutateAsync({
         firstName,
         lastName,
         email,
         phone,
         password,
-        agreeToTerms,
-        subscribeToNewsletter,
       });
 
-      setRegistrationEmail(response.email);
-      setStep(5);
-    } catch (err: any) {
-      setError(t("auth.registrationFailed"));
-    } finally {
-      setIsLoading(false);
+      setRegistrationEmail(email);
+      setStep(4);
+    } catch (err) {
+      const appError = parseApiError(err);
+      setError(appError.message);
     }
   };
 
-  const handleResendEmail = async () => {
-    setIsLoading(true);
-    try {
-      // Mock resend
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setError(t("auth.emailSent"));
-    } catch (err) {
-      setError(t("auth.registrationFailed"));
-    } finally {
-      setIsLoading(false);
-    }
+  const handleResendEmail = () => {
+    // Resend email functionality can be added here
+    alert(`Verification email resent to ${registrationEmail}`);
   };
 
   return (
@@ -160,7 +130,7 @@ export default function RegisterPage() {
         <h1 className="text-4xl font-bold text-maroon-dark font-display mb-2">
           {t("auth.registerTitle")}
         </h1>
-        {step !== 5 && (
+        {step !== 4 && (
           <p className="text-gray-600">
             {t("auth.step", { step: step.toString() })}
           </p>
@@ -168,140 +138,15 @@ export default function RegisterPage() {
       </div>
 
       {/* Error Alert */}
-      {error && step !== 1 && (
+      {error && step !== 4 && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
-      {/* Step 1: User Type Selection */}
+      {/* Step 1: Personal Info */}
       {step === 1 && (
-        <div>
-          <p className="mb-6 text-gray-700 font-medium">
-            {t("auth.selectUserType")}
-          </p>
-
-          <div className="space-y-4">
-            {/* Customer Option */}
-            <button
-              onClick={() => {
-                setUserType("customer");
-                setError(null);
-              }}
-              className={`w-full p-6 rounded-lg border-2 transition-all ${
-                userType === "customer"
-                  ? "border-maroon bg-maroon/5"
-                  : "border-gray-200 hover:border-maroon/30"
-              }`}>
-              <div className="flex items-center gap-4">
-                <div
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    userType === "customer"
-                      ? "border-maroon bg-maroon"
-                      : "border-gray-300"
-                  }`}>
-                  {userType === "customer" && (
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900">
-                    {t("auth.iamBuyer")}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {t("auth.buyerDescription")}
-                  </p>
-                </div>
-              </div>
-            </button>
-
-            {/* Vendor Option */}
-            <button
-              onClick={() => {
-                setUserType("vendor");
-                setError(t("auth.vendorOnlyAdmin"));
-              }}
-              className={`w-full p-6 rounded-lg border-2 transition-all ${
-                userType === "vendor"
-                  ? "border-gray-300 bg-gray-50"
-                  : "border-gray-200"
-              }`}>
-              <div className="flex items-center gap-4">
-                <div
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    userType === "vendor"
-                      ? "border-gray-400 bg-gray-300"
-                      : "border-gray-300"
-                  }`}>
-                  {userType === "vendor" && (
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="text-left flex-1">
-                  <p className="font-semibold text-gray-900">
-                    {t("auth.iamSeller")}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {t("auth.sellerDescription")}
-                  </p>
-                </div>
-              </div>
-            </button>
-          </div>
-
-          {/* Vendor Info */}
-          {userType === "vendor" && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-900 mb-3">
-                <strong>{t("auth.vendorOnlyAdmin")}</strong>
-              </p>
-              <p className="text-sm text-blue-700 mb-3">
-                {t("auth.contactUs")}
-              </p>
-              <ul className="text-sm text-blue-700 space-y-2">
-                <li>📧 Email: vendor@habeshabazaar.de</li>
-                <li>
-                  💬{" "}
-                  <a
-                    href="https://wa.me/49123456789"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-blue-900">
-                    WhatsApp
-                  </a>
-                </li>
-              </ul>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex gap-4 mt-8">
-            <Link
-              href="/login"
-              className="flex-1 px-6 py-3 border-2 border-gray-200 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition text-center">
-              {t("auth.back")}
-            </Link>
-            {userType === "customer" && (
-              <button
-                onClick={handleNext}
-                className="flex-1 px-6 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition">
-                {t("auth.next")}
-              </button>
-            )}
-            {!userType && (
-              <button
-                disabled
-                className="flex-1 px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-semibold cursor-not-allowed">
-                {t("auth.next")}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Personal Info */}
-      {step === 2 && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -371,12 +216,11 @@ export default function RegisterPage() {
 
           {/* Navigation */}
           <div className="flex gap-4 mt-8">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="flex-1 px-6 py-3 border-2 border-gray-200 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition">
+            <Link
+              href="/login"
+              className="flex-1 px-6 py-3 border-2 border-gray-200 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition text-center">
               {t("auth.back")}
-            </button>
+            </Link>
             <button
               type="submit"
               className="flex-1 px-6 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition">
@@ -386,8 +230,8 @@ export default function RegisterPage() {
         </form>
       )}
 
-      {/* Step 3: Security */}
-      {step === 3 && (
+      {/* Step 2: Password */}
+      {step === 2 && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -491,8 +335,8 @@ export default function RegisterPage() {
         </form>
       )}
 
-      {/* Step 4: Terms & Agreement */}
-      {step === 4 && (
+      {/* Step 3: Terms & Agreement */}
+      {step === 3 && (
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             {/* Terms Checkbox */}
@@ -537,16 +381,18 @@ export default function RegisterPage() {
             </button>
             <button
               type="submit"
-              disabled={isLoading || !agreeToTerms}
+              disabled={registerMutation.isPending || !agreeToTerms}
               className="flex-1 px-6 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition disabled:opacity-50 disabled:cursor-not-allowed">
-              {isLoading ? t("auth.creating") : t("auth.createAccount")}
+              {registerMutation.isPending
+                ? t("auth.creating")
+                : t("auth.createAccount")}
             </button>
           </div>
         </form>
       )}
 
-      {/* Step 5: Email Verification */}
-      {step === 5 && (
+      {/* Step 4: Email Verification */}
+      {step === 4 && (
         <div className="text-center">
           {/* Envelope Animation */}
           <div className="mb-8 flex justify-center">
@@ -575,9 +421,8 @@ export default function RegisterPage() {
           {/* Resend Button */}
           <button
             onClick={handleResendEmail}
-            disabled={isLoading}
-            className="w-full px-6 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition disabled:opacity-50 mb-4">
-            {isLoading ? t("auth.resending") : t("auth.resendEmail")}
+            className="w-full px-6 py-3 bg-maroon text-white rounded-lg font-semibold hover:bg-maroon-dark transition mb-4">
+            {t("auth.resendEmail")}
           </button>
 
           {/* Back to Login */}
@@ -587,15 +432,15 @@ export default function RegisterPage() {
             {t("auth.backToLogin")}
           </Link>
 
-          {/* Resend Help Text */}
+          {/* Help Text */}
           <p className="text-xs text-gray-500 mt-6">
             {t("auth.noEmailReceived")}
           </p>
         </div>
       )}
 
-      {/* Login Link (all steps except 5) */}
-      {step !== 5 && (
+      {/* Login Link (all steps except 4) */}
+      {step !== 4 && (
         <div className="mt-6 pt-6 border-t border-gray-200 text-center">
           <p className="text-gray-600 text-sm">
             {t("auth.haveAccount")}{" "}

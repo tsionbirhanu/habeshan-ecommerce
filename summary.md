@@ -83,14 +83,16 @@ Security rules:
 
 ### Auth Routes
 
-- `POST /api/auth/register-vendor`
-- `POST /api/auth/register-customer`
-- `POST /api/auth/login`
-- `POST /api/auth/refresh-token`
-- `POST /api/auth/logout`
-- `POST /api/auth/forgot-password`
-- `POST /api/auth/reset-password`
-- `GET /api/auth/me`
+- `POST /api/auth/register-customer` - Customer registration (public)
+- `POST /api/auth/login` - User login (public)
+- `POST /api/auth/refresh-token` - Refresh JWT token
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password with token
+- `GET /api/auth/me` - Get current user profile
+- `POST /api/auth/vendor/setup-password` - Vendor password setup (from invitation)
+
+⚠️ **NOTE**: Vendor registration is ADMIN-ONLY. See `Admin Routes` for vendor creation.
 
 ### User Routes
 
