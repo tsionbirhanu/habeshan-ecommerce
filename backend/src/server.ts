@@ -21,7 +21,10 @@ const runMigrations = async () => {
     return true;
   } catch (error: any) {
     // Migrations might already be deployed or fail for other reasons
-    if (error.message.includes('already applied') || error.message.includes('no pending migrations')) {
+    if (
+      error.message.includes('already applied') ||
+      error.message.includes('no pending migrations')
+    ) {
       logger.info('✅ Database already up to date');
       return true;
     }

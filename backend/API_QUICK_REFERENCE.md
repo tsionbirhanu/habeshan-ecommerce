@@ -24,18 +24,23 @@ POST /api/auth/register-customer
 → Returns: { accessToken, refreshToken, user }
 ```
 
-### Register Vendor
+### Create Vendor (Admin Only)
+
+**Note**: Vendor registration is ADMIN-ONLY. Use the admin endpoint below to create vendor accounts.
 
 ```
-POST /api/auth/register-vendor
+POST /api/admin/vendors (ADMIN ONLY)
 {
   "email": "vendor@example.com",
-  "password": "SecurePass123!",
-  "storeName": "My Store",
-  "storeDescription": "..."
+  "firstName": "John",
+  "lastName": "Doe",
+  "businessName": "My Store",
+  "description": "Store description"
 }
-→ Requires admin approval before activation
+→ Vendor receives invitation email to set password
 ```
+
+See **Admin Endpoints** section below for more details.
 
 ### Login
 

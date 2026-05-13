@@ -89,69 +89,31 @@ Failed to send verification email to user@example.com: [error]
 
 ### Base URL: `/api/auth`
 
-#### 1. Register as Vendor
+#### 1. Create Vendor Account (Admin Only)
 
-**Endpoint:** `POST /api/auth/register-vendor`
+⚠️ **IMPORTANT**: Vendor registration is **ADMIN-ONLY**. Public vendor registration is NOT available.
 
-**Description:** Create a new vendor account. Requires email verification and admin approval before account activation.
+Use the **Admin Endpoint** instead:
 
-**Access:** Public (No authentication required)
-
-**Request Body:**
-
-```json
+```
+POST /api/admin/vendors (Requires ADMIN role)
 {
   "email": "vendor@example.com",
-  "password": "SecurePass123!",
   "firstName": "John",
   "lastName": "Doe",
-  "phone": "+491234567890"
-}
-```
-
-**Validation Rules:**
-
-- Email: Valid email format, converted to lowercase, must be unique
-- Password: Min 8 chars, at least 1 uppercase letter, 1 number, 1 special character
-- firstName, lastName: Min 1 character required
-- phone: Required
-
-**Response (201 Created):**
-
-```json
-{
-  "success": true,
-  "message": "Registration submitted. Awaiting admin approval."
+  "businessName": "My Store",
+  "description": "Store description"
 }
 ```
 
 **Process Flow:**
 
-1. Vendor registration submitted
-2. Email verification link sent to email (24 hours expiry)
-3. Vendor must click verification link to verify email
-4. Admin reviews and approves/rejects vendor application
-5. Only after approval can vendor login
+1. Admin creates vendor account via `/api/admin/vendors`
+2. Vendor receives invitation email with password setup link
+3. Vendor clicks link to set password and activate account
+4. Vendor can now login
 
-**Error Response (409 - Conflict):**
-
-```json
-{
-  "success": false,
-  "error": "Email already registered",
-  "code": "USER_ALREADY_EXISTS"
-}
-```
-
-**Error Response (400 - Validation):**
-
-```json
-{
-  "success": false,
-  "error": "Password must contain at least one uppercase letter",
-  "code": "INVALID_INPUT"
-}
-```
+See **Admin Module - Vendor Management** section below for detailed vendor creation instructions.
 
 ---
 
