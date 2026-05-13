@@ -104,9 +104,11 @@ async function queueEmail(
 
   // Fallback: Send email directly via Nodemailer if queue is unavailable
   try {
-    logger.info(`[DIRECT SEND] Sending email directly via Nodemailer: ${to} | Template: ${templateId}`);
+    logger.info(
+      `[DIRECT SEND] Sending email directly via Nodemailer: ${to} | Template: ${templateId}`
+    );
     const success = await sendEmail({ to, subject, html });
-    
+
     if (success) {
       logger.info(`✓ Email sent directly via Nodemailer: ${to}`);
       return 'direct-send-' + Date.now();

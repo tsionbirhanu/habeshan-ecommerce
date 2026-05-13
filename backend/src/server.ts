@@ -28,7 +28,9 @@ if (emailQueue) {
 
     logger.info('📧 Email queue initialized');
   } catch (error: any) {
-    logger.warn(`⚠ Email queue initialization failed, will use direct email sending: ${error.message}`);
+    logger.warn(
+      `⚠ Email queue initialization failed, will use direct email sending: ${error.message}`
+    );
   }
 } else {
   logger.info('📧 Redis unavailable - email queue disabled, using direct Nodemailer');

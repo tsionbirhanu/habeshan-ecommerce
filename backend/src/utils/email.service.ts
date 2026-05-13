@@ -16,7 +16,9 @@ const transporter = nodemailer.createTransport({
 // Verify transporter connection (non-blocking, logs warning if unavailable)
 transporter.verify((error: Error | null, _success: boolean) => {
   if (error) {
-    logger.warn(`⚠ Email transporter verification failed (emails will be sent on-demand): ${error.message}`);
+    logger.warn(
+      `⚠ Email transporter verification failed (emails will be sent on-demand): ${error.message}`
+    );
   } else {
     logger.info('✓ Email transporter verified and ready');
   }

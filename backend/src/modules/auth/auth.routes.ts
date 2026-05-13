@@ -15,20 +15,14 @@ import {
 const router = Router();
 
 /**
- * @swagger
- * /api/auth/register-vendor:
- *   post:
- *     summary: Register as vendor (DISABLED - Use admin endpoint to create vendors)
- *     tags: [Auth]
- *     description: DEPRECATED - Vendors must be created by admin only
- *     responses:
- *       403:
- *         description: Vendor registration disabled
+ * ⚠️ VENDOR REGISTRATION POLICY: ADMIN-ONLY
+ * 
+ * Vendor accounts are created exclusively by administrators through the admin panel.
+ * Public vendor registration is NOT available.
+ * 
+ * Admin vendors endpoint: POST /api/admin/vendors
+ * Location: admin.routes.ts line 554
  */
-
-// DISABLED: Vendor registration via public endpoint
-// Vendors must be created by admin using /admin/vendors/create endpoint
-// router.post('/register-vendor', validateBody(registerVendorSchema), authController.registerVendor);
 
 /**
  * @swagger
