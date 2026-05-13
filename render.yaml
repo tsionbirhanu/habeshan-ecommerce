@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: habeshan-ecommerce
+    env: node
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    buildCommand: npm ci --production=false && npm run build
+    startCommand: npm run start:migrate
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
