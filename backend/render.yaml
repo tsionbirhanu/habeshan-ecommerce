@@ -4,8 +4,8 @@ services:
     env: node
     plan: free
     region: frankfurt
-    buildCommand: npm ci --production=false && npx prisma generate && npx prisma migrate deploy && npm run build
-    startCommand: npm start
+    buildCommand: npm ci --production=false && npm run build
+    startCommand: npm run start:migrate
     envVars:
       - key: NODE_ENV
         value: production
