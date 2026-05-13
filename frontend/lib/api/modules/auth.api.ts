@@ -38,9 +38,13 @@ export interface AuthResponse {
   tokens: AuthTokens;
 }
 
+export interface RegistrationResponse {
+  user: Omit<AuthUser, "isActive" | "isEmailVerified">;
+}
+
 class AuthAPI {
   registerCustomer(data: RegisterPayload) {
-    return apiClient.post<ApiResponse<AuthResponse>>(
+    return apiClient.post<ApiResponse<RegistrationResponse>>(
       "/auth/register-customer",
       data,
     );

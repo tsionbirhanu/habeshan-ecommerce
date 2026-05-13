@@ -100,16 +100,15 @@ export const errorHandler = (
   // Handle generic errors
   const response: ErrorResponse = {
     success: false,
-    error: env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+    error: err.message || 'Internal server error',
     code: 'INTERNAL_ERROR',
   };
 
-  // Include stack trace only in development
-  if (env.NODE_ENV === 'development') {
-    response.details = {
-      stack: err.stack,
-    };
-  }
+  // Always include details for unexpected errors to help debugging
+  response.details = {
+    type: err.constructor.name,
+    stack: err.stack,
+  };
 
   res.status(500).json(response);
 };

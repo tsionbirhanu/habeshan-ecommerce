@@ -10,8 +10,8 @@ export const useAuthHooks = () => {
   const registerMutation = useMutation({
     mutationFn: (data: RegisterPayload) => authAPI.registerCustomer(data),
     onSuccess: (response) => {
-      // Registration doesn't return tokens, user must verify email first
-      // Just invalidate any cached queries
+      // Registration successful - user must verify email before logging in
+      // No auto-login here, just clear any cached auth queries
       queryClient.invalidateQueries({ queryKey: ["auth"] });
     },
   });
