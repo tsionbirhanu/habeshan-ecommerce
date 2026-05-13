@@ -3,38 +3,81 @@ import { env } from './config/environment';
 import emailQueue from './config/queue';
 import { setupEmailQueue, onEmailJobFailed } from './jobs/email.job';
 import logger from './utils/logger';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
 const PORT = env.PORT;
+const execAsync = promisify(exec);
 
-// Initialize email queue only if available
-if (emailQueue) {
+// Run database migrations on startup
+const runMigrations = async () => {
   try {
-    setupEmailQueue(emailQueue);
-
-    // Set up event listeners for email queue
-    emailQueue.on('completed', (job: any) => {
-      logger.info(`✓ Email job ${job.id} completed successfully`);
+    logger.info('🔄 Checking and running database migrations...');
+    const { stdout } = await execAsync('npx prisma migrate deploy', {
+      cwd: process.cwd(),
+      maxBuffer: 1024 * 1024 * 10, // 10MB buffer
     });
-
-    emailQueue.on('failed', (job: any, err: Error) => {
-      if (job) {
-        onEmailJobFailed(job, err);
-      }
-    });
-
-    emailQueue.on('error', (error: Error) => {
-      logger.warn(`Email queue error (will fallback to direct send): ${error.message}`);
-    });
-
-    logger.info('📧 Email queue initialized');
+    logger.info('✅ Database migrations completed successfully');
+    return true;
   } catch (error: any) {
-    logger.warn(
-      `⚠ Email queue initialization failed, will use direct email sending: ${error.message}`
-    );
+    // Migrations might already be deployed or fail for other reasons
+    if (error.message.includes('already applied') || error.message.includes('no pending migrations')) {
+      logger.info('✅ Database already up to date');
+      return true;
+    }
+    logger.warn(`⚠ Migration warning: ${error.message}`);
+    // Don't fail the server startup, but warn about it
+    return true;
   }
-} else {
-  logger.info('📧 Redis unavailable - email queue disabled, using direct Nodemailer');
-}
+};
+
+// Start server with migrations
+const startServer = async () => {
+  try {
+    // Run migrations first
+    await runMigrations();
+
+    // Initialize email queue only if available
+    if (emailQueue) {
+      try {
+        setupEmailQueue(emailQueue);
+
+        // Set up event listeners for email queue
+        emailQueue.on('completed', (job: any) => {
+          logger.info(`✓ Email job ${job.id} completed successfully`);
+        });
+
+        emailQueue.on('failed', (job: any, err: Error) => {
+          if (job) {
+            onEmailJobFailed(job, err);
+          }
+        });
+
+        emailQueue.on('error', (error: Error) => {
+          logger.warn(`Email queue error (will fallback to direct send): ${error.message}`);
+        });
+
+        logger.info('📧 Email queue initialized');
+      } catch (error: any) {
+        logger.warn(
+          `⚠ Email queue initialization failed, will use direct email sending: ${error.message}`
+        );
+      }
+    } else {
+      logger.info('📧 Redis unavailable - email queue disabled, using direct Nodemailer');
+    }
+
+    // Start listening
+    app.listen(PORT, () => {
+      logger.info(`🚀 Server running on port ${PORT}`);
+      logger.info(`📝 Environment: ${env.NODE_ENV}`);
+      logger.info(`🏥 Health check: http://localhost:${PORT}/health`);
+    });
+  } catch (error: any) {
+    logger.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
@@ -61,8 +104,5 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-app.listen(PORT, () => {
-  logger.info(`🚀 Server running on port ${PORT}`);
-  logger.info(`📝 Environment: ${env.NODE_ENV}`);
-  logger.info(`🏥 Health check: http://localhost:${PORT}/health`);
-});
+// Start the server
+startServer();
