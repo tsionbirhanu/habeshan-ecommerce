@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-echo "Installing dependencies (including devDependencies)..."
-npm ci
+echo "Installing all dependencies (including devDependencies)..."
+npm install --legacy-peer-deps
 
 echo "Generating Prisma client..."
 npx prisma generate
