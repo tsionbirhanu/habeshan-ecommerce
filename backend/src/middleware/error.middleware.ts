@@ -40,6 +40,12 @@ export const errorHandler = (
 
   // Handle Prisma errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    // Log Prisma-specific details for debugging
+    try {
+      logger.error({ prismaCode: (err as any).code, prismaMeta: (err as any).meta });
+    } catch (logErr) {
+      logger.error('Failed to log Prisma meta', logErr as Error);
+    }
     let statusCode = 400;
     let message = 'Database error';
     let code = 'DATABASE_ERROR';
