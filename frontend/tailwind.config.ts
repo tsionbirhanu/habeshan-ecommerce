@@ -4,32 +4,10 @@ const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
-      colors: {
-        maroon: {
-          DEFAULT: "#6B1C1C",
-          dark: "#4A1010",
-          darker: "#3D0E0E",
-          light: "#8B2E2E",
-        },
-        gold: {
-          DEFAULT: "#D4A857",
-          light: "#E8C278",
-          muted: "#B8904A",
-        },
-        white: "#FFFFFF",
-        "off-white": "#FAF8F5",
-        cream: "#F5F0E8",
-        gray: {
-          100: "#F4F4F4",
-          200: "#E8E8E8",
-          400: "#9CA3AF",
-          600: "#4B5563",
-          800: "#1F2937",
-        },
-      },
       fontFamily: {
         display: ["Cormorant Garamond", "serif"],
         body: ["Nunito Sans", "sans-serif"],
@@ -51,6 +29,9 @@ const config: Config = {
         shimmer: "shimmer 2s infinite",
         "fade-in-up": "fadeInUp 0.6s ease-out",
         "slide-down": "slideDown 0.3s ease-out",
+        "slide-left": "slideLeft 0.3s ease-out",
+        "slide-right": "slideRight 0.3s ease-out",
+        "scale-up": "scaleUp 0.3s ease-out",
       },
       keyframes: {
         shimmer: {
@@ -75,6 +56,36 @@ const config: Config = {
           to: {
             opacity: "1",
             transform: "translateY(0)",
+          },
+        },
+        slideLeft: {
+          from: {
+            opacity: "0",
+            transform: "translateX(100%)",
+          },
+          to: {
+            opacity: "1",
+            transform: "translateX(0)",
+          },
+        },
+        slideRight: {
+          from: {
+            opacity: "0",
+            transform: "translateX(-100%)",
+          },
+          to: {
+            opacity: "1",
+            transform: "translateX(0)",
+          },
+        },
+        scaleUp: {
+          from: {
+            opacity: "0",
+            transform: "scale(0.95)",
+          },
+          to: {
+            opacity: "1",
+            transform: "scale(1)",
           },
         },
       },

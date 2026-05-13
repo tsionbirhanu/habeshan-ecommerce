@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Habesha Bazaar - Ethiopian & Eritrean eCommerce",
@@ -17,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-off-white text-gray-800 font-body">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

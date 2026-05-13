@@ -6,18 +6,20 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: "ADMIN" | "VENDOR" | "CUSTOMER";
   isActive: boolean;
+  isEmailVerified?: boolean;
 }
 
 interface AuthStore {
   user: User | null;
   accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  login: (user: User, accessToken: string) => void;
+  login: (user: User, accessToken: string, refreshToken?: string) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
-  setAccessToken: (token: string) => void;
+  setTokens: (accessToken: string, refreshToken?: string) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -25,12 +27,14 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
 
-      login: (user, accessToken) =>
+      login: (user, accessToken, refreshToken) =>
         set({
           user,
           accessToken,
+          refreshToken: refreshToken || null,
           isAuthenticated: true,
         }),
 
@@ -38,6 +42,7 @@ export const useAuthStore = create<AuthStore>()(
         set({
           user: null,
           accessToken: null,
+          refreshToken: null,
           isAuthenticated: false,
         }),
 
@@ -46,9 +51,10 @@ export const useAuthStore = create<AuthStore>()(
           user: state.user ? { ...state.user, ...updates } : null,
         })),
 
-      setAccessToken: (token) =>
+      setTokens: (accessToken, refreshToken) =>
         set({
-          accessToken: token,
+          accessToken,
+          refreshToken: refreshToken || null,
         }),
     }),
     {
@@ -56,6 +62,7 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     },

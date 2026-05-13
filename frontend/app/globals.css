@@ -5,6 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-maroon: #6b1c1c;
+  --color-maroon-dark: #4a1010;
+  --color-maroon-darker: #3d0e0e;
+  --color-maroon-light: #8b2e2e;
+  --color-gold: #d4a857;
+  --color-gold-light: #e8c278;
+  --color-gold-muted: #b8904a;
+  --color-off-white: #faf8f5;
+  --color-cream: #f5f0e8;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
