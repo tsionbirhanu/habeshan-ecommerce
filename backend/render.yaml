@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: habeshan-ecommerce
+    env: node
+    plan: free
+    region: frankfurt
+    buildCommand: bash render-build.sh
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
