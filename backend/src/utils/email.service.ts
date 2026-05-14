@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
   secure: env.SMTP_SECURE,
   auth: {
     user: env.SMTP_USER,
-    pass: env.SMTP_PASSWORD,
+    pass: env.SMTP_PASSWORD, // MUST be App Password for Gmail (not regular password)
   },
   tls: {
     // Do not fail on invalid certs - common for many SMTP providers in production
@@ -18,6 +18,7 @@ const transporter = nodemailer.createTransport({
   },
   connectionTimeout: 10000, // 10 seconds
   socketTimeout: 10000,     // 10 seconds
+  family: 4, // 🔥 IMPORTANT: forces IPv4 (fixes ENETUNREACH errors on Render)
 });
 
 // Configure SendGrid as fallback if API key is provided
