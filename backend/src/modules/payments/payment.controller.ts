@@ -840,7 +840,7 @@ export const capturePaypalOrder = async (req: Request, res: Response, next: Next
     });
 
     // Send order confirmation email
-    sendEmailAsync(
+    await sendEmail(
       generateOrderConfirmationEmail(
         order.customer.firstName,
         order.customer.email,
@@ -1057,7 +1057,7 @@ export const confirmKlarnaOrder = async (req: Request, res: Response, next: Next
       await inventoryService.deductStock(item.productId, item.quantity, orderId);
     }
 
-    sendEmailAsync(
+    await sendEmail(
       generateOrderConfirmationEmail(
         order.customer.firstName,
         order.customer.email,
