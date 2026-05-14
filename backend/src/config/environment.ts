@@ -29,17 +29,21 @@ const envSchema = z.object({
   KLARNA_MODE: z.enum(['playground', 'production']).default('playground'),
 
   // Email Configuration
-  SMTP_HOST: z.string().describe('SMTP server hostname (e.g., smtp-relay.brevo.com for Brevo)'),
+  BREVO_API_KEY: z.string().optional().describe('Brevo API key for transactional emails (recommended for Vercel)'),
+  BREVO_SMTP_HOST: z.string().default('smtp-relay.brevo.com'),
+  BREVO_SMTP_PORT: z.string().transform(Number).default('587'),
+  BREVO_SMTP_USER: z.string().optional(),
+  BREVO_SMTP_PASSWORD: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.string().transform(Number).default('587'),
   SMTP_SECURE: z
     .enum(['true', 'false'])
     .transform((v) => v === 'true')
     .default('false'),
-  SMTP_USER: z.string().describe('SMTP username (Brevo SMTP username)'),
-  SMTP_PASSWORD: z.string().describe('SMTP password (Brevo SMTP password)'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM: z.string().optional(),
   SENDGRID_API_KEY: z.string().optional(),
-  BREVO_API_KEY: z.string().optional(),
   EMAIL_FROM_NAME: z.string().default('Habeshan Mini Market'),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
 

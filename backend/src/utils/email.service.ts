@@ -1,66 +1,59 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/environment';
 import logger from './logger';
-import dns from 'dns';
 
 // ============================================
-// BREVO SMTP CONFIGURATION
+// EMAIL SERVICE: Brevo API (Primary) + SMTP (Fallback)
 // ============================================
-// Email transporter configured for Brevo SMTP (smtp-relay.brevo.com)
-// This provides reliable transactional email delivery for email verification and notifications
 
-// Force IPv4 DNS resolution at Node.js level (helps on Render)
-dns.setDefaultResultOrder('ipv4first');
+// Initialize SMTP transporter for fallback
+let smtpTransporter: nodemailer.Transporter | null = null;
 
-// Log the SMTP configuration for debugging
-logger.info(`📧 Initializing email transporter with SMTP host: ${env.SMTP_HOST}`);
-logger.info(`   SMTP_PORT: ${env.SMTP_PORT}`);
-logger.info(`   SMTP_SECURE: ${env.SMTP_SECURE}`);
-logger.info(`   SMTP_USER: ${env.SMTP_USER ? '***' + env.SMTP_USER.slice(-4) : 'NOT SET'}`);
-logger.info(`   Environment: ${process.env.NODE_ENV || 'development'}`);
-
-const transporter = nodemailer.createTransport({
-  host: env.SMTP_HOST, // smtp-relay.brevo.com for Brevo
-  port: env.SMTP_PORT, // 587
-  secure: env.SMTP_SECURE, // false
-  auth: {
-    user: env.SMTP_USER, // Brevo SMTP username
-    pass: env.SMTP_PASSWORD, // Brevo SMTP password
-  },
-  tls: {
-    // Do not fail on invalid certs - common for many SMTP providers in production
-    rejectUnauthorized: false,
-  },
-  connectionTimeout: 15000, // 15 seconds
-  socketTimeout: 15000,     // 15 seconds
-  family: 4, // Forces IPv4 ONLY (fixes ENETUNREACH errors on Render when IPv6 fails)
-  greylist: false, // Disable greylisting
-  logger: false, // Disable nodemailer debug logging (use our logger instead)
-  dkim: {
-    domainName: 'habeshanmarket.com',
-    keySelector: 'default',
-    privateKey: '', // Empty - will use Brevo's DKIM
-  },
-} as any);
-
-// Verify transporter connection on startup
-logger.info(`🔍 Verifying email transporter connection...`);
-transporter.verify((error: Error | null, _success: boolean) => {
-  if (error) {
-    logger.error(`❌ Email transporter verification failed: ${error.message}`);
-    logger.error(`   SMTP Host: ${env.SMTP_HOST}:${env.SMTP_PORT}`);
-    logger.error(`   SMTP User: ${env.SMTP_USER}`);
-    logger.error('   This may be due to:');
-    logger.error('   1. Incorrect SMTP credentials');
-    logger.error('   2. Network/firewall issues (IPv6 vs IPv4)');
-    logger.error('   3. Render environment variables not set correctly');
-  } else {
-    logger.info(`✅ Email transporter verified and ready!`);
-    logger.info(`   Service: Brevo SMTP`);
-    logger.info(`   Host: ${env.SMTP_HOST}:${env.SMTP_PORT}`);
-    logger.info(`   Mode: IPv4 only (family: 4)`);
+const initializeSMTPTransporter = () => {
+  if (env.BREVO_SMTP_USER && env.BREVO_SMTP_PASSWORD) {
+    return nodemailer.createTransport({
+      host: env.BREVO_SMTP_HOST,
+      port: env.BREVO_SMTP_PORT,
+      secure: false,
+      auth: {
+        user: env.BREVO_SMTP_USER,
+        pass: env.BREVO_SMTP_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+  } else if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD) {
+    return nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_SECURE,
+      auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
   }
-});
+  return null;
+};
+
+smtpTransporter = initializeSMTPTransporter();
+
+// Log email configuration
+logger.info('📧 Email Service Initialization:');
+if (env.BREVO_API_KEY) {
+  logger.info('   ✓ Brevo API Key configured (PRIMARY)');
+} else {
+  logger.info('   ⚠️ Brevo API Key not configured');
+}
+if (smtpTransporter) {
+  logger.info(`   ✓ SMTP Fallback ready (${env.BREVO_SMTP_HOST || env.SMTP_HOST}:${env.BREVO_SMTP_PORT || env.SMTP_PORT})`);
+} else {
+  logger.warn('   ⚠️ SMTP Fallback not configured - email sending may fail');
+}
 
 export interface EmailTemplate {
   to: string;
@@ -210,29 +203,74 @@ export const generateEmailVerificationEmail = (
 };
 
 /**
- * Send email via Brevo SMTP
+ * Send email via Brevo API (Primary) or SMTP (Fallback)
  */
 export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> => {
-  try {
-    const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
-    const fromEmail = env.SMTP_FROM || env.SMTP_USER;
+  const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
+  const fromEmail = env.SMTP_FROM || env.BREVO_SMTP_USER || env.SMTP_USER || 'noreply@habeshanmarket.com';
 
-    logger.info(`📧 Sending email via Brevo SMTP to ${emailTemplate.to} (Subject: ${emailTemplate.subject})`);
+  // Try Brevo API first if configured
+  if (env.BREVO_API_KEY) {
+    try {
+      logger.info(`📤 Attempting Brevo API: ${emailTemplate.to}`);
+      
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': env.BREVO_API_KEY,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: fromName,
+            email: fromEmail,
+          },
+          to: [
+            {
+              email: emailTemplate.to,
+            },
+          ],
+          subject: emailTemplate.subject,
+          htmlContent: emailTemplate.html,
+        }),
+      });
 
-    const info = await transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
-      to: emailTemplate.to,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-    });
-
-    logger.info(`✅ Email sent via Brevo SMTP to ${emailTemplate.to}: ${info.messageId}`);
-    return true;
-  } catch (error: any) {
-    logger.error(`❌ Failed to send email via Brevo SMTP to ${emailTemplate.to}: ${error.message}`);
-    if (error.stack) logger.debug(error.stack);
-    return false;
+      if (response.ok) {
+        const data = await response.json() as any;
+        logger.info(`✅ Email sent via Brevo API to ${emailTemplate.to}: ${data.messageId || 'OK'}`);
+        return true;
+      } else {
+        const errorData = await response.json() as any;
+        logger.warn(`⚠️ Brevo API failed (${response.status}): ${JSON.stringify(errorData)}`);
+      }
+    } catch (error: any) {
+      logger.warn(`⚠️ Brevo API error: ${error.message} - Will try SMTP fallback`);
+    }
   }
+
+  // Fallback to SMTP if Brevo API failed or not configured
+  if (smtpTransporter) {
+    try {
+      logger.info(`📧 Attempting SMTP Fallback: ${emailTemplate.to}`);
+      
+      const info = await smtpTransporter.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
+        to: emailTemplate.to,
+        subject: emailTemplate.subject,
+        html: emailTemplate.html,
+      });
+
+      logger.info(`✅ Email sent via SMTP to ${emailTemplate.to}: ${info.messageId}`);
+      return true;
+    } catch (error: any) {
+      logger.error(`❌ SMTP failed: ${error.message}`);
+      return false;
+    }
+  }
+
+  logger.error(`❌ No email service available (Brevo API and SMTP both unavailable)`);
+  return false;
 };
 
 /**
