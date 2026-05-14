@@ -1,8 +1,9 @@
 import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import { env } from '../config/environment';
 import logger from './logger';
 
-// Configure email transporter
+// Configure primary SMTP transporter
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
@@ -15,15 +16,25 @@ const transporter = nodemailer.createTransport({
     // Do not fail on invalid certs - common for many SMTP providers in production
     rejectUnauthorized: false,
   },
+  connectionTimeout: 10000, // 10 seconds
+  socketTimeout: 10000,     // 10 seconds
 });
 
-// Verify transporter connection
+// Configure SendGrid as fallback if API key is provided
+let sendGridConfigured = false;
+if (env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(env.SENDGRID_API_KEY);
+  sendGridConfigured = true;
+  logger.info('✓ SendGrid configured as email fallback');
+}
+
+// Verify SMTP transporter connection
 transporter.verify((error: Error | null, _success: boolean) => {
   if (error) {
-    logger.error(`❌ Email transporter verification failed: ${error.message}`);
+    logger.error(`❌ SMTP transporter verification failed: ${error.message}`);
     logger.error('Check your SMTP environment variables (HOST, PORT, USER, PASSWORD)');
   } else {
-    logger.info(`✓ Email transporter verified and ready (${env.SMTP_HOST}:${env.SMTP_PORT})`);
+    logger.info(`✓ SMTP transporter verified and ready (${env.SMTP_HOST}:${env.SMTP_PORT})`);
   }
 });
 
@@ -175,38 +186,73 @@ export const generateEmailVerificationEmail = (
 };
 
 /**
- * Send email
+ * Send email with SMTP fallback to SendGrid
  */
 export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> => {
+  const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
+  const fromEmail = env.SMTP_FROM || env.SMTP_USER;
+  
   try {
-    const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
-    const fromEmail = env.SMTP_FROM || env.SMTP_USER;
+    logger.info(`📧 Attempting to send email to ${emailTemplate.to} (Subject: ${emailTemplate.subject})`);
 
-    logger.info(`Attempting to send email to ${emailTemplate.to} (Subject: ${emailTemplate.subject})`);
+    // Try SMTP first
+    try {
+      const info = await transporter.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
+        to: emailTemplate.to,
+        subject: emailTemplate.subject,
+        html: emailTemplate.html,
+      });
 
-    const info = await transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
-      to: emailTemplate.to,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-    });
+      logger.info(`✅ Email sent via SMTP to ${emailTemplate.to}: ${info.messageId}`);
+      return true;
+    } catch (smtpError: any) {
+      logger.warn(`⚠️ SMTP send failed: ${smtpError.message}`);
+      
+      // Fallback to SendGrid if SMTP fails and SendGrid is configured
+      if (sendGridConfigured) {
+        logger.info('🔄 Falling back to SendGrid...');
+        
+        const msg = {
+          to: emailTemplate.to,
+          from: fromEmail,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          replyTo: env.COMPANY_EMAIL,
+        };
 
-    logger.info(`✓ Email sent to ${emailTemplate.to}: ${info.messageId}`);
-    return true;
+        const response = await sgMail.send(msg);
+        logger.info(`✅ Email sent via SendGrid to ${emailTemplate.to}: ${response[0].statusCode}`);
+        return true;
+      } else {
+        throw smtpError; // Re-throw if no SendGrid fallback
+      }
+    }
   } catch (error: any) {
-    logger.error(`✗ Failed to send email to ${emailTemplate.to}: ${error.message}`);
+    logger.error(`❌ Failed to send email to ${emailTemplate.to}:`);
+    logger.error(`   Error: ${error.message}`);
+    if (error.response?.body) {
+      logger.error(`   Response: ${JSON.stringify(error.response.body)}`);
+    }
     if (error.stack) logger.debug(error.stack);
+    
     return false;
   }
 };
 
 /**
  * Send email asynchronously (non-blocking)
+ * Useful for non-critical emails that shouldn't block the response
  */
-export const sendEmailAsync = (emailTemplate: EmailTemplate): Promise<void> => {
-  return sendEmail(emailTemplate)
-    .then(() => undefined)
+export const sendEmailAsync = (emailTemplate: EmailTemplate): void => {
+  // Fire and forget - log errors but don't block
+  sendEmail(emailTemplate)
+    .then((success) => {
+      if (!success) {
+        logger.warn(`Async email send may have failed for ${emailTemplate.to}`);
+      }
+    })
     .catch((error) => {
-      logger.error('Async email send failed:', error);
+      logger.error('Critical error in async email send:', error);
     });
 };
