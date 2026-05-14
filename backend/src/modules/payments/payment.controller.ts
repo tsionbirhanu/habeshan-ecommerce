@@ -7,7 +7,7 @@ import * as invoiceService from './invoice.service';
 import * as inventoryService from '../inventory/inventory.service';
 import { NotFoundError, ForbiddenError, ValidationError, AppError } from '../../utils/errors';
 import logger from '../../utils/logger';
-import { sendEmailAsync, generateOrderConfirmationEmail } from '../../utils/email.service';
+import { sendEmail, generateOrderConfirmationEmail } from '../../utils/email.service';
 import { env } from '../../config/environment';
 
 const prisma = new PrismaClient();
@@ -243,23 +243,19 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
     },
   });
 
-  logger.info(`Payment succeeded for order ${orderId}`);
-
-  // Send order confirmation email asynchronously
+  // Send order confirmation email
   const emailTemplate = generateOrderConfirmationEmail(
     order.customer.firstName,
     order.customer.email,
     orderId,
     Number(order.totalAmount),
     order.items.map((item) => ({
-      name: item.productId, // Should include product name, but we only have ID here
+      name: item.productId,
       quantity: item.quantity,
-      price: Number(item.unitPrice) / 100, // Convert from cents
+      price: Number(item.unitPrice) / 100,
     }))
   );
-  sendEmailAsync(emailTemplate).catch((err: any) => {
-    logger.error(`Failed to send order confirmation email: ${err.message}`);
-  });
+  await sendEmail(emailTemplate);
 
   // Generate invoice automatically
   invoiceService

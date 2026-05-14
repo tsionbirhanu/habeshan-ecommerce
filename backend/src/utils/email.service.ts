@@ -11,16 +11,19 @@ const transporter = nodemailer.createTransport({
     user: env.SMTP_USER,
     pass: env.SMTP_PASSWORD,
   },
+  tls: {
+    // Do not fail on invalid certs - common for many SMTP providers in production
+    rejectUnauthorized: false,
+  },
 });
 
-// Verify transporter connection (non-blocking, logs warning if unavailable)
+// Verify transporter connection
 transporter.verify((error: Error | null, _success: boolean) => {
   if (error) {
-    logger.warn(
-      `⚠ Email transporter verification failed (emails will be sent on-demand): ${error.message}`
-    );
+    logger.error(`❌ Email transporter verification failed: ${error.message}`);
+    logger.error('Check your SMTP environment variables (HOST, PORT, USER, PASSWORD)');
   } else {
-    logger.info('✓ Email transporter verified and ready');
+    logger.info(`✓ Email transporter verified and ready (${env.SMTP_HOST}:${env.SMTP_PORT})`);
   }
 });
 
@@ -176,17 +179,23 @@ export const generateEmailVerificationEmail = (
  */
 export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> => {
   try {
+    const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
+    const fromEmail = env.SMTP_FROM || env.SMTP_USER;
+
+    logger.info(`Attempting to send email to ${emailTemplate.to} (Subject: ${emailTemplate.subject})`);
+
     const info = await transporter.sendMail({
-      from: env.SMTP_FROM || env.SMTP_USER,
+      from: `"${fromName}" <${fromEmail}>`,
       to: emailTemplate.to,
       subject: emailTemplate.subject,
       html: emailTemplate.html,
     });
 
-    logger.info(`Email sent to ${emailTemplate.to}:`, info.messageId);
+    logger.info(`✓ Email sent to ${emailTemplate.to}: ${info.messageId}`);
     return true;
-  } catch (error) {
-    logger.error(`Failed to send email to ${emailTemplate.to}:`, error);
+  } catch (error: any) {
+    logger.error(`✗ Failed to send email to ${emailTemplate.to}: ${error.message}`);
+    if (error.stack) logger.debug(error.stack);
     return false;
   }
 };

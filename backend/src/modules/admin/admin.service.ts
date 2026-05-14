@@ -4,7 +4,7 @@ import { generateResetToken, generateEmailVerificationToken } from '../../utils/
 import logger from '../../utils/logger';
 import { UserRole } from '@prisma/client';
 import { hashPassword } from '../../utils/hash.utils';
-import { sendEmailAsync } from '../../utils/email.service';
+import { sendEmail } from '../../utils/email.service';
 
 // Audit Log Helper
 const createAuditLog = async (
@@ -405,9 +405,7 @@ export const createVendor = async (
       <p>This link expires in 7 days.</p>
     `,
   };
-  sendEmailAsync(invitationEmail).catch((err) => {
-    logger.error(`Failed to send invitation email to ${user.email}:`, err);
-  });
+  await sendEmail(invitationEmail);
 
   return {
     user: {

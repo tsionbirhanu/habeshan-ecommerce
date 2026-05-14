@@ -19,8 +19,9 @@ import {
 } from '../../utils/errors';
 
 import logger from '../../utils/logger';
+import { env } from '../../config/environment';
 import {
-  sendEmailAsync,
+  sendEmail,
   generateWelcomeEmail,
   generatePasswordResetEmail,
   generateEmailVerificationEmail,
@@ -67,15 +68,15 @@ export const createVendor = async (data: {
   logger.info(`Vendor registration submitted (pending verification): ${user.email}`);
 
   // Send verification email
-  const verificationUrl = `${process.env.APP_URL || 'http://localhost:3001/api'}/auth/verify-email?token=${verificationToken}`;
+  const verificationUrl = `${env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
   const verificationEmail = generateEmailVerificationEmail(
     user.firstName,
     user.email,
     verificationUrl
   );
-  sendEmailAsync(verificationEmail).catch((err) => {
-    logger.error(`Failed to send verification email to ${user.email}:`, err);
-  });
+  
+  // Await email send to ensure it's sent before finishing the request
+  await sendEmail(verificationEmail);
 
   return user;
 };
@@ -121,15 +122,15 @@ export const createCustomer = async (data: {
   logger.info(`Customer registered (pending email verification): ${user.email}`);
 
   // Send verification email
-  const verificationUrl = `${process.env.APP_URL || 'http://localhost:3001/api'}/auth/verify-email?token=${verificationToken}`;
+  const verificationUrl = `${env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
   const verificationEmail = generateEmailVerificationEmail(
     user.firstName,
     user.email,
     verificationUrl
   );
-  sendEmailAsync(verificationEmail).catch((err) => {
-    logger.error(`Failed to send verification email to ${user.email}:`, err);
-  });
+
+  // Await email send to ensure it's sent before finishing the request
+  await sendEmail(verificationEmail);
 
   return user;
 };
@@ -198,15 +199,13 @@ export const requestPasswordReset = async (email: string) => {
     const resetToken = generateResetToken(user.id, user.email);
 
     // Build reset URL (frontend should handle this route)
-    const resetUrl = `${process.env.APP_URL || 'http://localhost:3001/api'}/auth/reset-password?token=${resetToken}`;
+    const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
     logger.info(`Password reset requested: ${user.email}`);
 
-    // Send password reset email asynchronously
+    // Send password reset email
     const resetEmail = generatePasswordResetEmail(user.firstName, user.email, resetUrl);
-    sendEmailAsync(resetEmail).catch((err) => {
-      logger.error(`Failed to send password reset email to ${user.email}:`, err);
-    });
+    await sendEmail(resetEmail);
   }
 
   // Always return success to prevent email enumeration
@@ -272,9 +271,7 @@ export const setVendorPassword = async (token: string, password: string) => {
 
   // Send welcome email
   const welcomeEmail = generateWelcomeEmail(user.firstName, user.email);
-  sendEmailAsync(welcomeEmail).catch((err) => {
-    logger.error(`Failed to send welcome email to ${user.email}:`, err);
-  });
+  await sendEmail(welcomeEmail);
 
   return true;
 };
@@ -331,9 +328,7 @@ export const verifyEmail = async (token: string) => {
 
   // Send welcome email after verification
   const welcomeEmail = generateWelcomeEmail(user.firstName, user.email);
-  sendEmailAsync(welcomeEmail).catch((err) => {
-    logger.error(`Failed to send welcome email to ${user.email}:`, err);
-  });
+  await sendEmail(welcomeEmail);
 
   return true;
 };
@@ -363,15 +358,13 @@ export const resendVerificationEmail = async (email: string) => {
   logger.info(`Verification email resent: ${user.email}`);
 
   // Send new verification email
-  const verificationUrl = `${process.env.APP_URL || 'http://localhost:3001/api'}/auth/verify-email?token=${verificationToken}`;
+  const verificationUrl = `${env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
   const verificationEmail = generateEmailVerificationEmail(
     user.firstName,
     user.email,
     verificationUrl
   );
-  sendEmailAsync(verificationEmail).catch((err) => {
-    logger.error(`Failed to send verification email to ${user.email}:`, err);
-  });
+  await sendEmail(verificationEmail);
 
   return true;
 };
