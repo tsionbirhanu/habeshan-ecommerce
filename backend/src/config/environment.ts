@@ -81,3 +81,15 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+// Log critical configuration on startup (for debugging on Render)
+if (process.env.NODE_ENV === 'production') {
+  console.log('🔧 Production Configuration Loaded:');
+  console.log(`   SMTP_HOST: ${env.SMTP_HOST}`);
+  console.log(`   SMTP_PORT: ${env.SMTP_PORT}`);
+  console.log(`   SMTP_USER: ${env.SMTP_USER ? '***' + env.SMTP_USER.slice(-4) : 'MISSING'}`);
+  console.log(`   SMTP_PASSWORD: ${env.SMTP_PASSWORD ? '***' : 'MISSING'}`);
+  console.log(`   DATABASE_URL: ${env.DATABASE_URL ? 'SET' : 'MISSING'}`);
+  console.log(`   FRONTEND_URL: ${env.FRONTEND_URL}`);
+  console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
+}

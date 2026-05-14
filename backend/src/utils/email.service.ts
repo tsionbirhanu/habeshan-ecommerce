@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/environment';
 import logger from './logger';
+import dns from 'dns';
 
 // ============================================
 // BREVO SMTP CONFIGURATION
@@ -8,8 +9,15 @@ import logger from './logger';
 // Email transporter configured for Brevo SMTP (smtp-relay.brevo.com)
 // This provides reliable transactional email delivery for email verification and notifications
 
+// Force IPv4 DNS resolution at Node.js level (helps on Render)
+dns.setDefaultResultOrder('ipv4first');
+
 // Log the SMTP configuration for debugging
 logger.info(`📧 Initializing email transporter with SMTP host: ${env.SMTP_HOST}`);
+logger.info(`   SMTP_PORT: ${env.SMTP_PORT}`);
+logger.info(`   SMTP_SECURE: ${env.SMTP_SECURE}`);
+logger.info(`   SMTP_USER: ${env.SMTP_USER ? '***' + env.SMTP_USER.slice(-4) : 'NOT SET'}`);
+logger.info(`   Environment: ${process.env.NODE_ENV || 'development'}`);
 
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST, // smtp-relay.brevo.com for Brevo

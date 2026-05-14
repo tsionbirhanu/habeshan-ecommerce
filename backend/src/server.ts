@@ -13,22 +13,27 @@ const execAsync = promisify(exec);
 const runMigrations = async () => {
   try {
     logger.info('🔄 Checking and running database migrations...');
-    const { stdout } = await execAsync('npx prisma migrate deploy', {
+    const { stdout, stderr } = await execAsync('npx prisma migrate deploy', {
       cwd: process.cwd(),
       maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+      env: { ...process.env, DATABASE_URL: env.DATABASE_URL },
     });
+    if (stdout) logger.info(`✅ Migration output: ${stdout}`);
+    if (stderr) logger.info(`✅ Migration stderr: ${stderr}`);
     logger.info('✅ Database migrations completed successfully');
     return true;
   } catch (error: any) {
     // Migrations might already be deployed or fail for other reasons
+    const errorMsg = error.message || error.toString();
     if (
-      error.message.includes('already applied') ||
-      error.message.includes('no pending migrations')
+      errorMsg.includes('already applied') ||
+      errorMsg.includes('no pending migrations')
     ) {
       logger.info('✅ Database already up to date');
       return true;
     }
-    logger.warn(`⚠ Migration warning: ${error.message}`);
+    logger.warn(`⚠️ Migration warning: ${errorMsg}`);
+    logger.info('   This is usually not critical - the application can still run');
     // Don't fail the server startup, but warn about it
     return true;
   }
