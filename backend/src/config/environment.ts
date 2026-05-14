@@ -29,14 +29,14 @@ const envSchema = z.object({
   KLARNA_MODE: z.enum(['playground', 'production']).default('playground'),
 
   // Email Configuration
-  SMTP_HOST: z.string().default('smtp-relay.brevo.com'),
+  SMTP_HOST: z.string().describe('SMTP server hostname (e.g., smtp-relay.brevo.com for Brevo)'),
   SMTP_PORT: z.string().transform(Number).default('587'),
   SMTP_SECURE: z
     .enum(['true', 'false'])
     .transform((v) => v === 'true')
     .default('false'),
-  SMTP_USER: z.string(),
-  SMTP_PASSWORD: z.string(),
+  SMTP_USER: z.string().describe('SMTP username (Brevo SMTP username)'),
+  SMTP_PASSWORD: z.string().describe('SMTP password (Brevo SMTP password)'),
   SMTP_FROM: z.string().optional(),
   SENDGRID_API_KEY: z.string().optional(),
   BREVO_API_KEY: z.string().optional(),
@@ -63,7 +63,20 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
+  const errors = parsed.error.flatten().fieldErrors;
+  console.error('❌ Invalid environment variables:', errors);
+  
+  // Provide helpful error messages for email configuration
+  if (errors.SMTP_HOST || errors.SMTP_USER || errors.SMTP_PASSWORD) {
+    console.error('\n⚠️ Email Configuration Error:');
+    console.error('   You must set these variables for Brevo SMTP:');
+    console.error('   - SMTP_HOST=smtp-relay.brevo.com');
+    console.error('   - SMTP_USER=<your-brevo-username>');
+    console.error('   - SMTP_PASSWORD=<your-brevo-password>');
+    console.error('\n   On Render: Set these in Settings → Environment');
+    console.error('   Then redeploy your service');
+  }
+  
   process.exit(1);
 }
 

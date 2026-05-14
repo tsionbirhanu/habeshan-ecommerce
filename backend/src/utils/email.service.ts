@@ -7,6 +7,10 @@ import logger from './logger';
 // ============================================
 // Email transporter configured for Brevo SMTP (smtp-relay.brevo.com)
 // This provides reliable transactional email delivery for email verification and notifications
+
+// Log the SMTP configuration for debugging
+logger.info(`📧 Initializing email transporter with SMTP host: ${env.SMTP_HOST}`);
+
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST, // smtp-relay.brevo.com for Brevo
   port: env.SMTP_PORT, // 587
@@ -19,18 +23,34 @@ const transporter = nodemailer.createTransport({
     // Do not fail on invalid certs - common for many SMTP providers in production
     rejectUnauthorized: false,
   },
-  connectionTimeout: 10000, // 10 seconds
-  socketTimeout: 10000,     // 10 seconds
-  family: 4, // Forces IPv4 (fixes ENETUNREACH errors on Render)
+  connectionTimeout: 15000, // 15 seconds
+  socketTimeout: 15000,     // 15 seconds
+  family: 4, // Forces IPv4 ONLY (fixes ENETUNREACH errors on Render when IPv6 fails)
+  greylist: false, // Disable greylisting
+  logger: false, // Disable nodemailer debug logging (use our logger instead)
+  dkim: {
+    domainName: 'habeshanmarket.com',
+    keySelector: 'default',
+    privateKey: '', // Empty - will use Brevo's DKIM
+  },
 } as any);
 
 // Verify transporter connection on startup
+logger.info(`🔍 Verifying email transporter connection...`);
 transporter.verify((error: Error | null, _success: boolean) => {
   if (error) {
     logger.error(`❌ Email transporter verification failed: ${error.message}`);
-    logger.error('Check your SMTP environment variables (HOST, PORT, USER, PASSWORD)');
+    logger.error(`   SMTP Host: ${env.SMTP_HOST}:${env.SMTP_PORT}`);
+    logger.error(`   SMTP User: ${env.SMTP_USER}`);
+    logger.error('   This may be due to:');
+    logger.error('   1. Incorrect SMTP credentials');
+    logger.error('   2. Network/firewall issues (IPv6 vs IPv4)');
+    logger.error('   3. Render environment variables not set correctly');
   } else {
-    logger.info(`✓ Email transporter verified and ready (${env.SMTP_HOST}:${env.SMTP_PORT}) - Brevo SMTP`);
+    logger.info(`✅ Email transporter verified and ready!`);
+    logger.info(`   Service: Brevo SMTP`);
+    logger.info(`   Host: ${env.SMTP_HOST}:${env.SMTP_PORT}`);
+    logger.info(`   Mode: IPv4 only (family: 4)`);
   }
 });
 
