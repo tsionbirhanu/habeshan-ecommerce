@@ -1,10 +1,11 @@
 import nodemailer from 'nodemailer';
+import { NodemailerTransportOptions } from 'nodemailer/lib/smtp-transport';
 import sgMail from '@sendgrid/mail';
 import { env } from '../config/environment';
 import logger from './logger';
 
 // Configure primary SMTP transporter
-const transporter = nodemailer.createTransport({
+const smtpConfig: NodemailerTransportOptions = {
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
   secure: env.SMTP_SECURE,
@@ -19,7 +20,9 @@ const transporter = nodemailer.createTransport({
   connectionTimeout: 10000, // 10 seconds
   socketTimeout: 10000,     // 10 seconds
   family: 4, // 🔥 IMPORTANT: forces IPv4 (fixes ENETUNREACH errors on Render)
-});
+} as any;
+
+const transporter = nodemailer.createTransport(smtpConfig);
 
 // Configure SendGrid as fallback if API key is provided
 let sendGridConfigured = false;
