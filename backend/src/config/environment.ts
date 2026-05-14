@@ -39,6 +39,7 @@ const envSchema = z.object({
   SMTP_PASSWORD: z.string(),
   SMTP_FROM: z.string().optional(),
   SENDGRID_API_KEY: z.string().optional(),
+  BREVO_API_KEY: z.string().optional(), // Brevo (Sendinblue) API key for email sending
   EMAIL_FROM_NAME: z.string().default('Habeshan Mini Market'),
   FRONTEND_URL: z.string().default('https://habeshan.de'),
 

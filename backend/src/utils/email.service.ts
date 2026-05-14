@@ -1,9 +1,27 @@
+import * as SibApiV3Sdk from 'sib-api-v3-sdk';
 import nodemailer from 'nodemailer';
 import sgMail from '@sendgrid/mail';
 import { env } from '../config/environment';
 import logger from './logger';
 
-// Configure primary SMTP transporter
+// ============================================
+// BREVO API CONFIGURATION (Primary)
+// ============================================
+let brevoApiInstance: SibApiV3Sdk.TransactionalEmailsApi | null = null;
+
+if (env.BREVO_API_KEY) {
+  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  const apiKeyAuth = apiInstance.authentications['api-key'];
+  if (apiKeyAuth) {
+    apiKeyAuth.apiKey = env.BREVO_API_KEY;
+  }
+  brevoApiInstance = apiInstance;
+  logger.info('✓ Brevo API configured as primary email service');
+}
+
+// ============================================
+// NODEMAILER SMTP CONFIGURATION (Fallback)
+// ============================================
 const smtpConfig = {
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
@@ -23,23 +41,24 @@ const smtpConfig = {
 
 const transporter = nodemailer.createTransport(smtpConfig);
 
-// Configure SendGrid as fallback if API key is provided
+// Verify SMTP transporter connection
+transporter.verify((error: Error | null, _success: boolean) => {
+  if (error) {
+    logger.warn(`⚠️ SMTP transporter verification failed: ${error.message}`);
+  } else {
+    logger.info(`✓ SMTP fallback transporter ready (${env.SMTP_HOST}:${env.SMTP_PORT})`);
+  }
+});
+
+// ============================================
+// SENDGRID CONFIGURATION (Secondary Fallback)
+// ============================================
 let sendGridConfigured = false;
 if (env.SENDGRID_API_KEY) {
   sgMail.setApiKey(env.SENDGRID_API_KEY);
   sendGridConfigured = true;
   logger.info('✓ SendGrid configured as email fallback');
 }
-
-// Verify SMTP transporter connection
-transporter.verify((error: Error | null, _success: boolean) => {
-  if (error) {
-    logger.error(`❌ SMTP transporter verification failed: ${error.message}`);
-    logger.error('Check your SMTP environment variables (HOST, PORT, USER, PASSWORD)');
-  } else {
-    logger.info(`✓ SMTP transporter verified and ready (${env.SMTP_HOST}:${env.SMTP_PORT})`);
-  }
-});
 
 export interface EmailTemplate {
   to: string;
@@ -189,16 +208,39 @@ export const generateEmailVerificationEmail = (
 };
 
 /**
- * Send email with SMTP fallback to SendGrid
+ * Send email with Brevo API (primary) → SMTP (fallback) → SendGrid (final fallback)
  */
 export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> => {
   const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
   const fromEmail = env.SMTP_FROM || env.SMTP_USER;
-  
+
   try {
     logger.info(`📧 Attempting to send email to ${emailTemplate.to} (Subject: ${emailTemplate.subject})`);
 
-    // Try SMTP first
+    // ============================================
+    // Try Brevo API (Primary)
+    // ============================================
+    if (brevoApiInstance) {
+      try {
+        const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+        sendSmtpEmail.to = [{ email: emailTemplate.to }];
+        sendSmtpEmail.sender = { name: fromName, email: fromEmail };
+        sendSmtpEmail.subject = emailTemplate.subject;
+        sendSmtpEmail.htmlContent = emailTemplate.html;
+        sendSmtpEmail.replyTo = { email: env.COMPANY_EMAIL };
+
+        const response = await brevoApiInstance.sendTransacEmail(sendSmtpEmail);
+        logger.info(`✅ Email sent via Brevo to ${emailTemplate.to}: ${response.messageId}`);
+        return true;
+      } catch (brevoError: any) {
+        logger.warn(`⚠️ Brevo send failed: ${brevoError.message}`);
+        // Continue to SMTP fallback
+      }
+    }
+
+    // ============================================
+    // Try SMTP (Fallback)
+    // ============================================
     try {
       const info = await transporter.sendMail({
         from: `"${fromName}" <${fromEmail}>`,
@@ -212,21 +254,28 @@ export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> 
     } catch (smtpError: any) {
       logger.warn(`⚠️ SMTP send failed: ${smtpError.message}`);
       
-      // Fallback to SendGrid if SMTP fails and SendGrid is configured
+      // ============================================
+      // Try SendGrid (Final Fallback)
+      // ============================================
       if (sendGridConfigured) {
-        logger.info('🔄 Falling back to SendGrid...');
-        
-        const msg = {
-          to: emailTemplate.to,
-          from: fromEmail,
-          subject: emailTemplate.subject,
-          html: emailTemplate.html,
-          replyTo: env.COMPANY_EMAIL,
-        };
+        try {
+          logger.info('🔄 Falling back to SendGrid...');
+          
+          const msg = {
+            to: emailTemplate.to,
+            from: fromEmail,
+            subject: emailTemplate.subject,
+            html: emailTemplate.html,
+            replyTo: env.COMPANY_EMAIL,
+          };
 
-        const response = await sgMail.send(msg);
-        logger.info(`✅ Email sent via SendGrid to ${emailTemplate.to}: ${response[0].statusCode}`);
-        return true;
+          const response = await sgMail.send(msg);
+          logger.info(`✅ Email sent via SendGrid to ${emailTemplate.to}: ${response[0].statusCode}`);
+          return true;
+        } catch (sendgridError: any) {
+          logger.error(`❌ SendGrid send failed: ${sendgridError.message}`);
+          throw sendgridError;
+        }
       } else {
         throw smtpError; // Re-throw if no SendGrid fallback
       }
@@ -238,7 +287,7 @@ export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> 
       logger.error(`   Response: ${JSON.stringify(error.response.body)}`);
     }
     if (error.stack) logger.debug(error.stack);
-    
+
     return false;
   }
 };

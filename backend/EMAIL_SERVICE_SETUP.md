@@ -2,14 +2,37 @@
 
 ## Current Setup
 
-Your backend is configured to send emails using two methods:
+Your backend now uses a **three-tier email service** with automatic fallbacks:
 
-1. **Primary: Gmail SMTP** (configured via `SMTP_*` environment variables)
-2. **Fallback: SendGrid** (configured via `SENDGRID_API_KEY`)
+1. **Primary: Brevo (Sendinblue) API** ⭐ Recommended for production
+2. **Fallback 1: Gmail SMTP**
+3. **Fallback 2: SendGrid API**
+
+## Email Service Flow
+
+```
+User Action (Register/Reset Password)
+        ↓
+sendEmail() called
+        ↓
+Try Brevo API
+        ↓
+    Success? → ✅ Done
+        ↓
+    Failed? → Fallback to SMTP (Gmail)
+        ↓
+    Success? → ✅ Done
+        ↓
+    Failed? → Fallback to SendGrid
+        ↓
+    Success? → ✅ Done
+        ↓
+    Failed? → ❌ Log error, continue
+```
 
 ## For Local Development ✅
 
-Your local setup is working correctly! You can test emails with:
+Your local setup is working correctly! You can test all email services with:
 
 ```bash
 npx ts-node test-email.ts
@@ -17,7 +40,37 @@ npx ts-node test-email.ts
 
 ## For Production (Render) 🚀
 
-### Option 1: Continue Using Gmail (Recommended for now)
+### Option 1: Brevo API (Recommended) ⭐
+
+Brevo is the most reliable and feature-rich option for production.
+
+**Steps:**
+
+1. Sign up at [Brevo](https://app.brevo.com) (formerly Sendinblue)
+2. Go to **Settings > Keys & Credentials**
+3. Copy your **SMTP Key** (API Key)
+4. Add to Render environment variables:
+
+```env
+BREVO_API_KEY=your_api_key_here
+# Keep SMTP credentials as fallback
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=tsionbirhanu08@gmail.com
+SMTP_PASSWORD=<your-app-password>
+SMTP_FROM=noreply@habeshanmarket.com
+```
+
+**Benefits:**
+- ✅ Best deliverability rates
+- ✅ Free tier: 300 emails/day
+- ✅ Full email templates in dashboard
+- ✅ Analytics and tracking
+- ✅ No rate limits
+- ✅ Excellent support
+
+### Option 2: Gmail SMTP (Fallback)
 
 Gmail SMTP requires an **App Password**, not your regular Gmail password.
 
@@ -39,9 +92,9 @@ SMTP_FROM=noreply@habeshanmarket.com
 EMAIL_FROM_NAME=Habeshan Mini Market
 ```
 
-### Option 2: Use SendGrid (More Reliable) ✨
+### Option 3: SendGrid (Alternative)
 
-SendGrid is more reliable for production and has better deliverability.
+SendGrid is another reliable option if you prefer not to use Brevo.
 
 **Steps:**
 
@@ -51,6 +104,7 @@ SendGrid is more reliable for production and has better deliverability.
 
 ```env
 SENDGRID_API_KEY=SG.your_api_key_here
+# SMTP as secondary fallback
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_SECURE=false
@@ -58,73 +112,76 @@ SMTP_USER=dummy@example.com
 SMTP_PASSWORD=dummy-password
 ```
 
-When SendGrid is configured, it will be used as a fallback if SMTP fails.
+## Environment Variables
 
-### Option 3: Use SendGrid as Primary
+```env
+# ========== BREVO EMAIL SERVICE (API) ==========
+BREVO_API_KEY=your_brevo_api_key_here  # Primary (recommended)
 
-Replace the email service with direct SendGrid calls:
+# ========== EMAIL CONFIGURATION (SMTP) ==========
+SMTP_HOST=smtp.gmail.com               # Fallback 1
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=tsionbirhanu08@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM=noreply@habeshanmarket.com
 
-```typescript
-// In email.service.ts, use sgMail directly instead of nodemailer
-```
+# ========== SENDGRID (Optional Fallback) ==========
+SENDGRID_API_KEY=SG.your_key_here     # Fallback 2
 
-## Email Flow
-
-```
-User Action (Register/Reset Password)
-        ↓
-sendEmail() called
-        ↓
-Try SMTP (Gmail)
-        ↓
-    Success? → ✅ Done
-        ↓
-    Failed? → Fallback to SendGrid
-        ↓
-    Success? → ✅ Done
-        ↓
-    Failed? → ❌ Log error, continue
+# ========== OTHER EMAIL SETTINGS ==========
+EMAIL_FROM_NAME=Habeshan Mini Market
+FRONTEND_URL=https://habeshan.de
+COMPANY_EMAIL=info@habeshan.de
 ```
 
 ## Troubleshooting
 
 ### Problem: "Cannot find module bcrypt"
-- Solution: Already fixed! Run `pnpm approve-builds` ✅
+- Solution: Run `pnpm approve-builds` ✅
 
 ### Problem: Emails not arriving in production
 1. **Check environment variables** on Render dashboard
-2. **Verify SMTP credentials** - use `test-email.ts` script
-3. **Check spam folder** - Gmail may flag automated emails
-4. **Use SendGrid** - more reliable delivery
+2. **Verify credentials** - run `npx ts-node test-email.ts`
+3. **Check spam folder** - automated emails may be flagged
+4. **Check logs** - look for email sending errors in Render logs
 
-### Problem: Gmail rejecting emails
-- Solution: Use SendGrid instead (better reputation)
-- Alternative: Contact Gmail to increase sender reputation
+### Problem: Brevo API not working
+- Verify API key is correct
+- Check Brevo account status (not suspended)
+- Try SMTP/SendGrid fallbacks
+- Check Render logs for API error messages
 
-### Problem: Render environment variables not loaded
-- Re-deploy after updating variables on Render dashboard
-- Variables won't take effect until deployment
+### Problem: Gmail SMTP rejected
+- Use App Password (not regular password)
+- Ensure 2FA is enabled
+- Check Gmail security settings
+- Verify SMTP credentials are correct
+- Consider using Brevo instead (better reputation)
+
+### Problem: IPv4/IPv6 connectivity (ENETUNREACH)
+- ✅ Already fixed in the code with `family: 4` setting
+- Forces IPv4 instead of IPv6 on Render
 
 ## Testing in Production
 
-To test email sending in production:
-
-1. Make a registration request via the API
-2. Check inbox for verification email
-3. If not received:
+1. **Deploy to Render** after updating environment variables
+2. **Make a registration request** via API
+3. **Check inbox** for verification email (10-30 seconds)
+4. **If not received:**
    - Check spam/junk folder
-   - Check Render logs for errors: `pnpm dev 2>&1 | grep -i email`
-   - Re-run `test-email.ts` after SSH into Render container
+   - Check Render logs: `pnpm dev 2>&1 | grep -i email`
+   - Run `npx ts-node test-email.ts` after SSH into container
 
 ## Email Templates Included
 
-- ✉️ Email Verification
-- 🎉 Welcome Email
-- 🔐 Password Reset
-- 📦 Order Confirmation
-- And more...
+All templates are in `src/utils/email.service.ts`:
 
-All templates are in `src/utils/email.service.ts` and can be customized.
+- ✉️ Email Verification (24-hour link expiry)
+- 🎉 Welcome Email
+- 🔐 Password Reset (1-hour link expiry)
+- 📦 Order Confirmation
+- Custom templates can be added easily
 
 ## Security Notes
 
@@ -132,17 +189,54 @@ All templates are in `src/utils/email.service.ts` and can be customized.
 - Never commit `.env` files with real credentials
 - Use environment variable management on Render
 - Rotate API keys periodically
-- Gmail App Passwords are specific to this app only
-- SendGrid API keys can be regenerated anytime
+- Gmail App Passwords are specific to this app
+- API keys can be regenerated anytime
+- Use HTTPS for all email links
 
-## Next Steps
+## Recommended Production Setup
 
-1. Update `.env` on Render with correct SMTP credentials
-2. Deploy the backend
-3. Test email functionality via API registration endpoint
-4. Monitor logs for email sending errors
+```env
+# Primary email service
+BREVO_API_KEY=your_brevo_key
+
+# Fallback SMTP (Gmail)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+
+# Optional: SendGrid fallback
+SENDGRID_API_KEY=SG.your_key
+
+# Email settings
+EMAIL_FROM_NAME=Habeshan Mini Market
+SMTP_FROM=noreply@habeshanmarket.com
+FRONTEND_URL=https://habeshan.de
+COMPANY_EMAIL=info@habeshan.de
+```
+
+## Comparing Email Services
+
+| Feature | Brevo | Gmail SMTP | SendGrid |
+|---------|-------|-----------|----------|
+| Free Tier | 300/day | Limited | 100/day |
+| Reliability | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
+| Speed | 1-5s | 5-10s | 1-5s |
+| Templates | Built-in | No | Built-in |
+| Analytics | ✅ | ❌ | ✅ |
+| Support | Excellent | Limited | Good |
+
+**Recommendation:** Use Brevo for production, SMTP as fallback. ✅
+
+## Getting Help
+
+- Brevo Docs: https://developers.brevo.com
+- Gmail App Password: https://support.google.com/accounts/answer/185833
+- SendGrid Docs: https://sendgrid.com/docs
+- Email Headers: Check bounce/failure headers for diagnostics
 
 ---
 
-For more details on SendGrid setup, see: https://sendgrid.com/docs
-For Gmail App Passwords: https://support.google.com/accounts/answer/185833
+Last Updated: May 14, 2026
+
