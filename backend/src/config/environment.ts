@@ -29,7 +29,7 @@ const envSchema = z.object({
   KLARNA_MODE: z.enum(['playground', 'production']).default('playground'),
 
   // Email Configuration
-  SMTP_HOST: z.string(),
+  SMTP_HOST: z.string().default('smtp-relay.brevo.com'),
   SMTP_PORT: z.string().transform(Number).default('587'),
   SMTP_SECURE: z
     .enum(['true', 'false'])
@@ -39,9 +39,9 @@ const envSchema = z.object({
   SMTP_PASSWORD: z.string(),
   SMTP_FROM: z.string().optional(),
   SENDGRID_API_KEY: z.string().optional(),
-  BREVO_API_KEY: z.string().optional(), // Brevo (Sendinblue) API key for email sending
+  BREVO_API_KEY: z.string().optional(),
   EMAIL_FROM_NAME: z.string().default('Habeshan Mini Market'),
-  FRONTEND_URL: z.string().default('https://habeshan.de'),
+  FRONTEND_URL: z.string().default('http://localhost:3000'),
 
   // Redis Configuration (Email Queue)
   REDIS_URL: z.string().optional(),
