@@ -353,7 +353,7 @@ export const sendInvoiceEmail = async (orderId: string, customerEmail: string): 
     // Queue email with attachment (simplified - sendEmailAsync doesn't support attachments yet)
     logger.info(`Invoice email queued for ${customerEmail} (${invoiceData.invoiceNumber})`);
 
-    // TODO: Implement attachment support in email service or use direct nodemailer
+    // TODO: Implement attachment support in email service via Brevo API
     // For now, just log the invoice was generated
     await prisma.invoice.update({
       where: { id: invoiceData.invoice.id },

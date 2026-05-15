@@ -1,20 +1,17 @@
-import sgMail from '@sendgrid/mail';
 import { env } from './environment';
 
 /**
- * SendGrid configuration for email sending
+ * Brevo API configuration for email sending
  */
-if (env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(env.SENDGRID_API_KEY);
-}
 
 export const emailConfig = {
-  apiKey: env.SENDGRID_API_KEY,
+  apiKey: env.BREVO_API_KEY,
   from: {
     email: env.SMTP_FROM || 'noreply@habeshan.de',
     name: env.EMAIL_FROM_NAME || 'Habeshan Mini Market',
   },
-  isConfigured: !!env.SENDGRID_API_KEY,
+  isConfigured: !!env.BREVO_API_KEY,
+  brevoApiUrl: 'https://api.brevo.com/v3/smtp/email',
 };
 
-export default sgMail;
+export default emailConfig;

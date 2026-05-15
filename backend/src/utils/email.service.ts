@@ -1,58 +1,16 @@
-import nodemailer from 'nodemailer';
 import { env } from '../config/environment';
 import logger from './logger';
 
 // ============================================
-// EMAIL SERVICE: Brevo API (Primary) + SMTP (Fallback)
+// EMAIL SERVICE: Brevo API
 // ============================================
 
-// Initialize SMTP transporter for fallback
-let smtpTransporter: nodemailer.Transporter | null = null;
-
-const initializeSMTPTransporter = () => {
-  if (env.BREVO_SMTP_USER && env.BREVO_SMTP_PASSWORD) {
-    return nodemailer.createTransport({
-      host: env.BREVO_SMTP_HOST,
-      port: env.BREVO_SMTP_PORT,
-      secure: false,
-      auth: {
-        user: env.BREVO_SMTP_USER,
-        pass: env.BREVO_SMTP_PASSWORD,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-  } else if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD) {
-    return nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_SECURE,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASSWORD,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-  }
-  return null;
-};
-
-smtpTransporter = initializeSMTPTransporter();
-
 // Log email configuration
-logger.info('📧 Email Service Initialization:');
+logger.info('📧 Email Service Initialization (Brevo):');
 if (env.BREVO_API_KEY) {
-  logger.info('   ✓ Brevo API Key configured (PRIMARY)');
+  logger.info('   ✓ Brevo API Key configured');
 } else {
-  logger.info('   ⚠️ Brevo API Key not configured');
-}
-if (smtpTransporter) {
-  logger.info(`   ✓ SMTP Fallback ready (${env.BREVO_SMTP_HOST || env.SMTP_HOST}:${env.BREVO_SMTP_PORT || env.SMTP_PORT})`);
-} else {
-  logger.warn('   ⚠️ SMTP Fallback not configured - email sending may fail');
+  logger.error('   ❌ BREVO_API_KEY environment variable not configured - email sending will fail');
 }
 
 export interface EmailTemplate {
@@ -203,74 +161,55 @@ export const generateEmailVerificationEmail = (
 };
 
 /**
- * Send email via Brevo API (Primary) or SMTP (Fallback)
+ * Send email via Brevo API
  */
 export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> => {
-  const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
-  const fromEmail = env.SMTP_FROM || env.BREVO_SMTP_USER || env.SMTP_USER || 'noreply@habeshanmarket.com';
-
-  // Try Brevo API first if configured
-  if (env.BREVO_API_KEY) {
-    try {
-      logger.info(`📤 Attempting Brevo API: ${emailTemplate.to}`);
-      
-      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'api-key': env.BREVO_API_KEY,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          sender: {
-            name: fromName,
-            email: fromEmail,
-          },
-          to: [
-            {
-              email: emailTemplate.to,
-            },
-          ],
-          subject: emailTemplate.subject,
-          htmlContent: emailTemplate.html,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json() as any;
-        logger.info(`✅ Email sent via Brevo API to ${emailTemplate.to}: ${data.messageId || 'OK'}`);
-        return true;
-      } else {
-        const errorData = await response.json() as any;
-        logger.warn(`⚠️ Brevo API failed (${response.status}): ${JSON.stringify(errorData)}`);
-      }
-    } catch (error: any) {
-      logger.warn(`⚠️ Brevo API error: ${error.message} - Will try SMTP fallback`);
-    }
+  if (!env.BREVO_API_KEY) {
+    logger.error('❌ BREVO_API_KEY not configured - cannot send email');
+    return false;
   }
 
-  // Fallback to SMTP if Brevo API failed or not configured
-  if (smtpTransporter) {
-    try {
-      logger.info(`📧 Attempting SMTP Fallback: ${emailTemplate.to}`);
-      
-      const info = await smtpTransporter.sendMail({
-        from: `"${fromName}" <${fromEmail}>`,
-        to: emailTemplate.to,
-        subject: emailTemplate.subject,
-        html: emailTemplate.html,
-      });
+  const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
+  const fromEmail = env.SMTP_FROM || 'noreply@habeshanmarket.com';
 
-      logger.info(`✅ Email sent via SMTP to ${emailTemplate.to}: ${info.messageId}`);
+  try {
+    logger.info(`📤 Sending email via Brevo API: ${emailTemplate.to}`);
+    
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': env.BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: {
+          name: fromName,
+          email: fromEmail,
+        },
+        to: [
+          {
+            email: emailTemplate.to,
+          },
+        ],
+        subject: emailTemplate.subject,
+        htmlContent: emailTemplate.html,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json() as any;
+      logger.info(`✅ Email sent successfully to ${emailTemplate.to} (Message ID: ${data.messageId || 'OK'})`);
       return true;
-    } catch (error: any) {
-      logger.error(`❌ SMTP failed: ${error.message}`);
+    } else {
+      const errorData = await response.json() as any;
+      logger.error(`❌ Brevo API error (${response.status}): ${JSON.stringify(errorData)}`);
       return false;
     }
+  } catch (error: any) {
+    logger.error(`❌ Failed to send email via Brevo API: ${error.message}`);
+    return false;
   }
-
-  logger.error(`❌ No email service available (Brevo API and SMTP both unavailable)`);
-  return false;
 };
 
 /**
