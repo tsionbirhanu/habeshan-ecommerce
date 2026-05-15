@@ -1,6 +1,7 @@
 import { Job } from 'bull';
 import sgMail from '@sendgrid/mail';
 import { emailConfig } from '../config/email';
+import { nodemailerConfig } from '../config/nodemailer';
 import logger from '../utils/logger';
 
 /**
@@ -40,12 +41,12 @@ export const processEmailJob = async (job: Job<EmailJobData>) => {
     const message: any = {
       to: job.data.to,
       from: {
-        email: emailConfig.from.email,
-        name: emailConfig.from.name,
+        email: nodemailerConfig.from,
+        name: 'Habeshan Mini Market',
       },
       subject: job.data.subject,
       html: job.data.html,
-      replyTo: emailConfig.from.email,
+      replyTo: nodemailerConfig.from,
       trackingSettings: {
         clickTracking: {
           enable: true,

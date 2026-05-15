@@ -28,10 +28,14 @@ const envSchema = z.object({
   KLARNA_REGION: z.string().default('eu'),
   KLARNA_MODE: z.enum(['playground', 'production']).default('playground'),
 
-  // Email Configuration (Resend)
-  RESEND_API_KEY: z.string().describe('Resend API key for transactional emails - REQUIRED'),
-  RESEND_FROM_EMAIL: z.string().optional(),
-  RESEND_FROM_NAME: z.string().default('Habeshan Mini Market'),
+  // Email Configuration (Nodemailer)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().transform(Number).optional(),
+  SMTP_SECURE: z.string().transform((val) => val === 'true').optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  
   FRONTEND_URL: z.string().default('http://localhost:3000'),
 
   // Redis Configuration (Email Queue)
@@ -58,13 +62,14 @@ if (!parsed.success) {
   console.error('❌ Invalid environment variables:', errors);
   
   // Provide helpful error messages for email configuration
-  if (errors.RESEND_API_KEY) {
+  if (errors.SMTP_HOST) {
     console.error('\n⚠️ Email Configuration Error:');
-    console.error('   You must set the following variable:');
-    console.error('   - RESEND_API_KEY=<your-resend-api-key>');
-    console.error('\n   Get your API key from: https://resend.com/');
-    console.error('   On Render: Set this in Settings → Environment');
-    console.error('   Then redeploy your service');
+    console.error('   Configure Nodemailer SMTP with these variables:');
+    console.error('   - SMTP_HOST');
+    console.error('   - SMTP_PORT');
+    console.error('   - SMTP_USER');
+    console.error('   - SMTP_PASSWORD');
+    console.error('   - SMTP_FROM');
   }
   
   process.exit(1);
@@ -75,8 +80,7 @@ export const env = parsed.data;
 // Log critical configuration on startup (for debugging on Render)
 if (process.env.NODE_ENV === 'production') {
   console.log('🔧 Production Configuration Loaded:');
-  console.log(`   RESEND_API_KEY: ${env.RESEND_API_KEY ? '✓ Configured' : '❌ MISSING'}`);
-  console.log(`   RESEND_FROM_EMAIL: ${env.RESEND_FROM_EMAIL || 'onboarding@resend.dev (default)'}`);
+  console.log(`   SMTP_HOST: ${env.SMTP_HOST ? '✓ Configured' : '⚠️ Not configured'}`);
   console.log(`   DATABASE_URL: ${env.DATABASE_URL ? 'SET' : 'MISSING'}`);
   console.log(`   FRONTEND_URL: ${env.FRONTEND_URL}`);
   console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);

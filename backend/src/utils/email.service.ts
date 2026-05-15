@@ -1,17 +1,16 @@
-import { Resend } from 'resend';
-import { env } from '../config/environment';
+import { getNodemailerTransporter, nodemailerConfig } from '../config/nodemailer';
 import logger from './logger';
 
 // ============================================
-// EMAIL SERVICE: Resend API
+// EMAIL SERVICE: Nodemailer SMTP
 // ============================================
 
 // Log email configuration
-logger.info('📧 Email Service Initialization (Resend):');
-if (env.RESEND_API_KEY) {
-  logger.info('   ✓ Resend API Key configured');
+logger.info('📧 Email Service Initialization:');
+if (nodemailerConfig.isConfigured) {
+  logger.info('   ✓ Nodemailer SMTP configured');
 } else {
-  logger.error('   ❌ RESEND_API_KEY environment variable not configured - email sending will fail');
+  logger.error('   ❌ Email service not configured - email sending will fail');
 }
 
 export interface EmailTemplate {
@@ -162,50 +161,40 @@ export const generateEmailVerificationEmail = (
 };
 
 /**
- * Send email via Resend API
+ * Send email via Nodemailer SMTP
  */
 export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> => {
-  if (!env.RESEND_API_KEY) {
-    logger.error('❌ RESEND_API_KEY not configured - cannot send email');
+  if (!nodemailerConfig.isConfigured) {
+    logger.error('❌ Nodemailer SMTP not configured - cannot send email');
     return false;
   }
 
-  const fromEmail = env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-  const fromName = env.RESEND_FROM_NAME || 'Habeshan Mini Market';
-
   try {
-    logger.info(`📤 Sending email via Resend API to: ${emailTemplate.to}`);
-    logger.info(`   From: "${fromName}" <${fromEmail}>`);
-    
-    // Initialize Resend with API key
-    const resend = new Resend(env.RESEND_API_KEY);
+    const transporter = getNodemailerTransporter();
+    if (!transporter) {
+      logger.warn('⚠️ Nodemailer transporter not initialized');
+      return false;
+    }
 
-    const response = await resend.emails.send({
-      from: `${fromName} <${fromEmail}>`,
+    logger.info(`📤 Sending email via Nodemailer SMTP to: ${emailTemplate.to}`);
+    logger.info(`   From: ${nodemailerConfig.from}`);
+
+    const info = await transporter.sendMail({
+      from: nodemailerConfig.from,
       to: emailTemplate.to,
       subject: emailTemplate.subject,
       html: emailTemplate.html,
     });
 
-    if (response.error) {
-      logger.error(`❌ Resend API error: ${JSON.stringify(response.error)}`);
-      logger.error(`   Error details: ${response.error}`);
-      return false;
-    }
-
-    if (response.data?.id) {
-      logger.info(`✅ Email sent successfully to ${emailTemplate.to} (ID: ${response.data.id})`);
-      return true;
-    } else {
-      logger.warn(`⚠️ Email sent but no message ID returned`);
-      return true;
-    }
+    logger.info(`✅ Email sent successfully to ${emailTemplate.to} (MessageID: ${info.messageId})`);
+    return true;
   } catch (error: any) {
-    logger.error(`❌ Failed to send email via Resend API: ${error.message}`);
-    logger.error(`   Full error: ${JSON.stringify(error)}`);
+    logger.error(`❌ Failed to send email via Nodemailer: ${error.message}`);
     return false;
   }
 };
+
+
 
 /**
  * Send email asynchronously (non-blocking)

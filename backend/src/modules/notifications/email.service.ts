@@ -63,7 +63,7 @@ function replaceVariables(template: string, data: TemplateData): string {
 /**
  * Queue email job
  * Common function used by all email sending functions
- * Falls back to direct Resend API sending if Redis/Bull is unavailable
+ * Falls back to direct Nodemailer sending if Redis/Bull is unavailable
  */
 async function queueEmail(
   to: string,
@@ -102,15 +102,15 @@ async function queueEmail(
     }
   }
 
-  // Fallback: Send email directly via Resend API if queue is unavailable
+  // Fallback: Send email directly via Nodemailer if queue is unavailable
   try {
     logger.info(
-      `[DIRECT SEND] Sending email directly via Resend API: ${to} | Template: ${templateId}`
+      `[DIRECT SEND] Sending email directly via Nodemailer: ${to} | Template: ${templateId}`
     );
     const success = await sendEmail({ to, subject, html });
 
     if (success) {
-      logger.info(`✓ Email sent directly via Resend API: ${to}`);
+      logger.info(`✓ Email sent directly via Nodemailer: ${to}`);
       return 'direct-send-' + Date.now();
     } else {
       throw new Error('Direct email send failed');

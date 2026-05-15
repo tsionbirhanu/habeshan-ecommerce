@@ -2,6 +2,7 @@ import app from './app';
 import { env } from './config/environment';
 import emailQueue from './config/queue';
 import { setupEmailQueue, onEmailJobFailed } from './jobs/email.job';
+import { initNodemailer } from './config/nodemailer';
 import logger from './utils/logger';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -45,6 +46,9 @@ const startServer = async () => {
     // Run migrations first
     await runMigrations();
 
+    // Initialize Nodemailer SMTP
+    await initNodemailer();
+
     // Initialize email queue only if available
     if (emailQueue) {
       try {
@@ -72,7 +76,7 @@ const startServer = async () => {
         );
       }
     } else {
-      logger.info('📧 Redis unavailable - email queue disabled, using direct Resend API');
+      logger.info('📧 Redis unavailable - email queue disabled, using direct Nodemailer');
     }
 
     // Start listening
