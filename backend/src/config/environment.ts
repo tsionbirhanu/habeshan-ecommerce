@@ -28,10 +28,10 @@ const envSchema = z.object({
   KLARNA_REGION: z.string().default('eu'),
   KLARNA_MODE: z.enum(['playground', 'production']).default('playground'),
 
-  // Email Configuration (Brevo)
-  BREVO_API_KEY: z.string().describe('Brevo API key for transactional emails - REQUIRED'),
-  SMTP_FROM: z.string().optional(),
-  EMAIL_FROM_NAME: z.string().default('Habeshan Mini Market'),
+  // Email Configuration (Resend)
+  RESEND_API_KEY: z.string().describe('Resend API key for transactional emails - REQUIRED'),
+  RESEND_FROM_EMAIL: z.string().optional(),
+  RESEND_FROM_NAME: z.string().default('Habeshan Mini Market'),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
 
   // Redis Configuration (Email Queue)
@@ -58,11 +58,11 @@ if (!parsed.success) {
   console.error('❌ Invalid environment variables:', errors);
   
   // Provide helpful error messages for email configuration
-  if (errors.BREVO_API_KEY) {
+  if (errors.RESEND_API_KEY) {
     console.error('\n⚠️ Email Configuration Error:');
     console.error('   You must set the following variable:');
-    console.error('   - BREVO_API_KEY=<your-brevo-api-key>');
-    console.error('\n   Get your API key from: https://www.brevo.com/');
+    console.error('   - RESEND_API_KEY=<your-resend-api-key>');
+    console.error('\n   Get your API key from: https://resend.com/');
     console.error('   On Render: Set this in Settings → Environment');
     console.error('   Then redeploy your service');
   }
@@ -75,8 +75,8 @@ export const env = parsed.data;
 // Log critical configuration on startup (for debugging on Render)
 if (process.env.NODE_ENV === 'production') {
   console.log('🔧 Production Configuration Loaded:');
-  console.log(`   BREVO_API_KEY: ${env.BREVO_API_KEY ? '✓ Configured' : '❌ MISSING'}`);
-  console.log(`   SMTP_FROM: ${env.SMTP_FROM || 'noreply@habeshanmarket.com (default)'}`);
+  console.log(`   RESEND_API_KEY: ${env.RESEND_API_KEY ? '✓ Configured' : '❌ MISSING'}`);
+  console.log(`   RESEND_FROM_EMAIL: ${env.RESEND_FROM_EMAIL || 'onboarding@resend.dev (default)'}`);
   console.log(`   DATABASE_URL: ${env.DATABASE_URL ? 'SET' : 'MISSING'}`);
   console.log(`   FRONTEND_URL: ${env.FRONTEND_URL}`);
   console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);

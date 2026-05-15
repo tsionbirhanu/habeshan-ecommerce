@@ -54,6 +54,7 @@
     "pdfkit": "^0.18.0",
     "prisma": "^5.12.0",
     "redis": "^5.12.1",
+    "resend": "^6.12.3",
     "sib-api-v3-sdk": "^8.5.0",
     "stripe": "^22.1.0",
     "swagger-jsdoc": "^6.2.8",

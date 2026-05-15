@@ -72,7 +72,7 @@ const startServer = async () => {
         );
       }
     } else {
-      logger.info('📧 Redis unavailable - email queue disabled, using direct Brevo API');
+      logger.info('📧 Redis unavailable - email queue disabled, using direct Resend API');
     }
 
     // Start listening

@@ -1,17 +1,17 @@
 import { env } from './environment';
 
 /**
- * Brevo API configuration for email sending
+ * Resend API configuration for email sending
  */
 
 export const emailConfig = {
-  apiKey: env.BREVO_API_KEY,
+  apiKey: env.RESEND_API_KEY,
   from: {
-    email: env.SMTP_FROM || 'noreply@habeshan.de',
-    name: env.EMAIL_FROM_NAME || 'Habeshan Mini Market',
+    email: env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+    name: env.RESEND_FROM_NAME || 'Habeshan Mini Market',
   },
-  isConfigured: !!env.BREVO_API_KEY,
-  brevoApiUrl: 'https://api.brevo.com/v3/smtp/email',
+  isConfigured: !!env.RESEND_API_KEY,
+  resendApiUrl: 'https://api.resend.com/emails',
 };
 
 export default emailConfig;

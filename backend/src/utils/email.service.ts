@@ -1,16 +1,20 @@
+import { Resend } from 'resend';
 import { env } from '../config/environment';
 import logger from './logger';
 
 // ============================================
-// EMAIL SERVICE: Brevo API
+// EMAIL SERVICE: Resend API
 // ============================================
 
+// Initialize Resend client
+const resend = new Resend(env.RESEND_API_KEY);
+
 // Log email configuration
-logger.info('📧 Email Service Initialization (Brevo):');
-if (env.BREVO_API_KEY) {
-  logger.info('   ✓ Brevo API Key configured');
+logger.info('📧 Email Service Initialization (Resend):');
+if (env.RESEND_API_KEY) {
+  logger.info('   ✓ Resend API Key configured');
 } else {
-  logger.error('   ❌ BREVO_API_KEY environment variable not configured - email sending will fail');
+  logger.error('   ❌ RESEND_API_KEY environment variable not configured - email sending will fail');
 }
 
 export interface EmailTemplate {
@@ -161,53 +165,36 @@ export const generateEmailVerificationEmail = (
 };
 
 /**
- * Send email via Brevo API
+ * Send email via Resend API
  */
 export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> => {
-  if (!env.BREVO_API_KEY) {
-    logger.error('❌ BREVO_API_KEY not configured - cannot send email');
+  if (!env.RESEND_API_KEY) {
+    logger.error('❌ RESEND_API_KEY not configured - cannot send email');
     return false;
   }
 
-  const fromName = env.EMAIL_FROM_NAME || 'Habeshan Mini Market';
-  const fromEmail = env.SMTP_FROM || 'noreply@habeshanmarket.com';
+  const fromEmail = env.RESEND_FROM_EMAIL || 'noreply@habeshan.de';
+  const fromName = env.RESEND_FROM_NAME || 'Habeshan Mini Market';
 
   try {
-    logger.info(`📤 Sending email via Brevo API: ${emailTemplate.to}`);
+    logger.info(`📤 Sending email via Resend API: ${emailTemplate.to}`);
     
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': env.BREVO_API_KEY,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        sender: {
-          name: fromName,
-          email: fromEmail,
-        },
-        to: [
-          {
-            email: emailTemplate.to,
-          },
-        ],
-        subject: emailTemplate.subject,
-        htmlContent: emailTemplate.html,
-      }),
+    const response = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
+      to: emailTemplate.to,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
     });
 
-    if (response.ok) {
-      const data = await response.json() as any;
-      logger.info(`✅ Email sent successfully to ${emailTemplate.to} (Message ID: ${data.messageId || 'OK'})`);
-      return true;
-    } else {
-      const errorData = await response.json() as any;
-      logger.error(`❌ Brevo API error (${response.status}): ${JSON.stringify(errorData)}`);
+    if (response.error) {
+      logger.error(`❌ Resend API error: ${JSON.stringify(response.error)}`);
       return false;
     }
+
+    logger.info(`✅ Email sent successfully to ${emailTemplate.to} (ID: ${response.data?.id || 'OK'})`);
+    return true;
   } catch (error: any) {
-    logger.error(`❌ Failed to send email via Brevo API: ${error.message}`);
+    logger.error(`❌ Failed to send email via Resend API: ${error.message}`);
     return false;
   }
 };
