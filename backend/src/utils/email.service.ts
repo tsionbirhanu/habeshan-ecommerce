@@ -6,9 +6,6 @@ import logger from './logger';
 // EMAIL SERVICE: Resend API
 // ============================================
 
-// Initialize Resend client
-const resend = new Resend(env.RESEND_API_KEY);
-
 // Log email configuration
 logger.info('📧 Email Service Initialization (Resend):');
 if (env.RESEND_API_KEY) {
@@ -173,12 +170,16 @@ export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> 
     return false;
   }
 
-  const fromEmail = env.RESEND_FROM_EMAIL || 'noreply@habeshan.de';
+  const fromEmail = env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
   const fromName = env.RESEND_FROM_NAME || 'Habeshan Mini Market';
 
   try {
-    logger.info(`📤 Sending email via Resend API: ${emailTemplate.to}`);
+    logger.info(`📤 Sending email via Resend API to: ${emailTemplate.to}`);
+    logger.info(`   From: "${fromName}" <${fromEmail}>`);
     
+    // Initialize Resend with API key
+    const resend = new Resend(env.RESEND_API_KEY);
+
     const response = await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
       to: emailTemplate.to,
@@ -188,13 +189,20 @@ export const sendEmail = async (emailTemplate: EmailTemplate): Promise<boolean> 
 
     if (response.error) {
       logger.error(`❌ Resend API error: ${JSON.stringify(response.error)}`);
+      logger.error(`   Error details: ${response.error}`);
       return false;
     }
 
-    logger.info(`✅ Email sent successfully to ${emailTemplate.to} (ID: ${response.data?.id || 'OK'})`);
-    return true;
+    if (response.data?.id) {
+      logger.info(`✅ Email sent successfully to ${emailTemplate.to} (ID: ${response.data.id})`);
+      return true;
+    } else {
+      logger.warn(`⚠️ Email sent but no message ID returned`);
+      return true;
+    }
   } catch (error: any) {
     logger.error(`❌ Failed to send email via Resend API: ${error.message}`);
+    logger.error(`   Full error: ${JSON.stringify(error)}`);
     return false;
   }
 };
